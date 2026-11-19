@@ -16,6 +16,5 @@ final readonly class WeeklyReportInput
         public array $salesCents,
         public array $ridership,
         public ?string $remarks,
-        public ?string $keyIssues,
     ) {}
 }

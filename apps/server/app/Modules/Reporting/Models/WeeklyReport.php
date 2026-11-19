@@ -7,10 +7,10 @@ use App\Modules\Reporting\Enums\ReportStatus;
 use App\Modules\Reporting\Enums\SalesCategory;
 use App\Modules\Terminals\Models\Supervisor;
 use App\Modules\Terminals\Models\Terminal;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * One terminal's sales and ridership for one reporting week.
@@ -32,12 +32,11 @@ use Illuminate\Support\Carbon;
  * @property string $total_sales
  * @property int $total_ridership
  * @property string|null $remarks
- * @property string|null $key_issues
- * @property Carbon|null $submitted_at
+ * @property CarbonImmutable|null $submitted_at
  * @property int $created_by
  * @property int|null $approved_by
- * @property Carbon|null $approved_at
- * @property Carbon $updated_at
+ * @property CarbonImmutable|null $approved_at
+ * @property CarbonImmutable $updated_at
  * @property-read Terminal $terminal
  * @property-read ReportingWeek $reportingWeek
  * @property-read Supervisor|null $supervisor

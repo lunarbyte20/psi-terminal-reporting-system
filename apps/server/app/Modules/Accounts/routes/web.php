@@ -1,7 +1,10 @@
 <?php
 
+use App\Modules\Accounts\Http\Controllers\AuditLogController;
 use App\Modules\Accounts\Http\Controllers\UserAccountController;
 use Illuminate\Support\Facades\Route;
+
+Route::get('admin/audit-log', AuditLogController::class)->middleware('can:administer')->name('admin.audit-log');
 
 Route::middleware('can:administer')->prefix('admin/users')->name('admin.users.')->group(function (): void {
     Route::get('/', [UserAccountController::class, 'index'])->name('index');

@@ -31,7 +31,7 @@ export function NavUser() {
                     <DropdownMenuTrigger asChild>
                         <SidebarMenuButton
                             size="lg"
-                            className="group text-sidebar-accent-foreground data-[state=open]:bg-sidebar-accent"
+                            className="group text-sidebar-foreground data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                             data-test="sidebar-menu-button"
                         >
                             <UserInfo user={auth.user} />
@@ -39,8 +39,10 @@ export function NavUser() {
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
-                        className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg"
+                        className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg [--accent-foreground:#23118c] [--accent:#eef2ff] dark:[--accent-foreground:#fff7b3] dark:[--accent:#30236b]"
                         align="end"
+                        // Opens in line with the account button inside the sidebar (it flips
+                        // upward at the bottom of the screen); beside the rail only when collapsed.
                         side={
                             isMobile
                                 ? 'bottom'

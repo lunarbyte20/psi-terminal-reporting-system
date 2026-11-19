@@ -1,10 +1,16 @@
 import { Link, usePage } from '@inertiajs/react';
 import {
-    Building2,
+    Bus,
+    CalendarRange,
+    CircleAlert,
+    ClipboardList,
+    History,
     LayoutDashboard,
-    ListTree,
     MapPin,
-    Tags,
+    NotebookPen,
+    ScrollText,
+    UserCog,
+    Users,
     UsersRound,
 } from 'lucide-react';
 import AppLogo from '@/components/app-logo';
@@ -20,114 +26,64 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { dashboard } from '@/routes';
-import type { Auth, NavItem } from '@/types';
+import type { NavItem } from '@/types';
 
 export function AppSidebar() {
-    const { auth, company } = usePage<{
-        auth: Auth;
-        company?: {
-            code: string;
-            name: string;
-            brand_color: string | null;
-            logo_url: string | null;
-            role?: string;
-        };
-    }>().props;
-    const workspaceCompany = auth.is_super_admin ? null : company;
-    const mainNavItems: NavItem[] = auth.is_super_admin
-        ? [{ title: 'Companies', href: '/admin/companies', icon: Building2 }]
-        : workspaceCompany
-          ? [
-                {
-                    title: 'Overview',
-                    href: `/workspaces/${workspaceCompany.code}`,
-                    icon: LayoutDashboard,
-                },
-            ]
-          : [{ title: 'Choose company', href: '/workspaces', icon: Building2 }];
+    const { auth } = usePage().props;
+
+    const workItems: NavItem[] = [
+        { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+        {
+            title: auth.can.viewAllTerminals
+                ? 'Weekly Reports'
+                : 'My Weekly Reports',
+            href: '/reports',
+            icon: ClipboardList,
+        },
+        { title: 'Issues & Actions', href: '/issues', icon: CircleAlert },
+        { title: 'Monthly Ridership', href: '/ridership', icon: Users },
+        { title: 'Report History', href: '/history', icon: History },
+        ...(auth.can.viewAllTerminals
+            ? [
+                  {
+                      title: 'Evaluation & Recommendations',
+                      href: '/evaluation',
+                      icon: NotebookPen,
+                  },
+              ]
+            : []),
+    ];
+
+    const setupItems: NavItem[] = [
+        { title: 'Terminals', href: '/admin/terminals', icon: MapPin },
+        { title: 'Supervisors', href: '/admin/supervisors', icon: UsersRound },
+        { title: 'Vehicle types', href: '/admin/vehicle-types', icon: Bus },
+        {
+            title: 'Reporting weeks',
+            href: '/admin/reporting-weeks',
+            icon: CalendarRange,
+        },
+        { title: 'User accounts', href: '/admin/users', icon: UserCog },
+        { title: 'Audit Log', href: '/admin/audit-log', icon: ScrollText },
+    ];
 
     return (
-        <Sidebar collapsible="icon" variant="inset">
+        <Sidebar collapsible="icon" variant="sidebar">
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton size="lg" asChild>
-                            <Link
-                                href={
-                                    workspaceCompany
-                                        ? `/workspaces/${workspaceCompany.code}`
-                                        : dashboard()
-                                }
-                                prefetch
-                            >
-                                {workspaceCompany ? (
-                                    <span
-                                        className="flex min-w-0 items-center gap-2"
-                                        title={workspaceCompany.name}
-                                    >
-                                        {workspaceCompany.logo_url && (
-                                            <img
-                                                src={workspaceCompany.logo_url}
-                                                alt=""
-                                                className="size-8 shrink-0 rounded bg-white object-contain"
-                                            />
-                                        )}
-                                        <span className="truncate font-semibold">
-                                            {workspaceCompany.name}
-                                        </span>
-                                    </span>
-                                ) : (
-                                    <AppLogo />
-                                )}
+                            <Link href={dashboard()} prefetch>
+                                <AppLogo />
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
             <SidebarContent>
-                <NavMain
-                    items={mainNavItems}
-                    label={
-                        auth.is_super_admin
-                            ? 'Administration'
-                            : workspaceCompany
-                              ? 'Workspace'
-                              : 'Overview'
-                    }
-                />
-                {workspaceCompany?.role === 'timekeeper' && (
-                    <>
-                        <NavMain
-                            label="Staff management"
-                            items={[
-                                {
-                                    title: 'Employees',
-                                    href: `/workspaces/${workspaceCompany.code}/staff`,
-                                    icon: UsersRound,
-                                },
-                                {
-                                    title: 'Staff types',
-                                    href: `/workspaces/${workspaceCompany.code}/staff-types`,
-                                    icon: ListTree,
-                                },
-                            ]}
-                        />
-                        <NavMain
-                            label="Site management"
-                            items={[
-                                {
-                                    title: 'Sites',
-                                    href: `/workspaces/${workspaceCompany.code}/sites`,
-                                    icon: MapPin,
-                                },
-                                {
-                                    title: 'Site categories',
-                                    href: `/workspaces/${workspaceCompany.code}/site-categories`,
-                                    icon: Tags,
-                                },
-                            ]}
-                        />
-                    </>
+                <NavMain items={workItems} label="Management" />
+                {auth.can.administer && (
+                    <NavMain items={setupItems} label="Administration" />
                 )}
             </SidebarContent>
             <SidebarFooter>

@@ -1,116 +1,47 @@
 import { usePage } from '@inertiajs/react';
 import type { BreadcrumbItem } from '@/types';
 
+/** Top-level sections and the name shown for their list page. */
+const sections: { prefix: string; title: string }[] = [
+    { prefix: '/admin/terminals', title: 'Terminals' },
+    { prefix: '/admin/supervisors', title: 'Supervisors' },
+    { prefix: '/admin/vehicle-types', title: 'Vehicle types' },
+    { prefix: '/admin/reporting-weeks', title: 'Reporting weeks' },
+    { prefix: '/admin/users', title: 'User accounts' },
+    { prefix: '/admin/audit-log', title: 'Audit Log' },
+    { prefix: '/history', title: 'Report History' },
+    { prefix: '/ridership', title: 'Monthly Ridership' },
+    { prefix: '/reports', title: 'Weekly reports' },
+    { prefix: '/issues', title: 'Issues & Actions' },
+    { prefix: '/evaluation', title: 'Evaluation & Recommendations' },
+    { prefix: '/dashboard', title: 'Dashboard' },
+    { prefix: '/settings', title: 'Settings' },
+];
+
+function childTitle(path: string): string {
+    if (path.endsWith('/create')) return 'Add';
+    if (path.endsWith('/edit')) return 'Edit';
+
+    return 'Details';
+}
+
 /**
- * Derives header breadcrumbs from the current URL and page props, so pages
- * wrapped automatically by the app layout still show their location.
+ * Derives header breadcrumbs from the current URL so pages wrapped
+ * automatically by the app layout still show where the user is.
  */
 export function useAutoBreadcrumbs(): BreadcrumbItem[] {
-    const { url, props } = usePage<{ company?: { name?: string } }>();
+    const { url } = usePage();
     const path = url.split('?')[0];
+    const section = sections.find(
+        (item) => path === item.prefix || path.startsWith(`${item.prefix}/`),
+    );
 
-    if (path === '/admin/companies') {
-        return [{ title: 'Companies', href: '/admin/companies' }];
+    if (!section) return [];
+
+    const list = { title: section.title, href: section.prefix };
+    if (path === section.prefix || section.prefix === '/settings') {
+        return [list];
     }
 
-    if (path === '/admin/companies/create') {
-        return [
-            { title: 'Companies', href: '/admin/companies' },
-            { title: 'Add company', href: path },
-        ];
-    }
-
-    if (path.startsWith('/admin/companies/') && props.company?.name) {
-        return [
-            { title: 'Companies', href: '/admin/companies' },
-            { title: props.company.name, href: path },
-        ];
-    }
-
-    if (path.startsWith('/settings')) {
-        return [{ title: 'Settings', href: path }];
-    }
-
-    if (path.startsWith('/workspaces/') && props.company?.name) {
-        const siteCategoriesIndex = path.indexOf('/site-categories');
-        if (siteCategoriesIndex !== -1) {
-            const overview = path.slice(0, siteCategoriesIndex);
-            const list = `${overview}/site-categories`;
-            return [
-                { title: 'Overview', href: overview },
-                { title: 'Site categories', href: list },
-                ...(path === list
-                    ? []
-                    : [
-                          {
-                              title: 'Site category details',
-                              href: path,
-                          },
-                      ]),
-            ];
-        }
-
-        const siteIndex = path.indexOf('/sites');
-        if (siteIndex !== -1) {
-            const overview = path.slice(0, siteIndex);
-            const list = `${overview}/sites`;
-            return [
-                { title: 'Overview', href: overview },
-                { title: 'Sites', href: list },
-                ...(path === list
-                    ? []
-                    : [
-                          {
-                              title: path.endsWith('/create')
-                                  ? 'Add site'
-                                  : path.endsWith('/edit')
-                                    ? 'Edit site'
-                                    : 'Site details',
-                              href: path,
-                          },
-                      ]),
-            ];
-        }
-
-        const staffIndex = path.indexOf('/staff');
-        if (staffIndex !== -1 && !path.includes('/staff-types')) {
-            const overview = path.slice(0, staffIndex);
-            const list = `${overview}/staff`;
-            return [
-                { title: 'Overview', href: overview },
-                { title: 'Employees', href: list },
-                ...(path === list
-                    ? []
-                    : [
-                          {
-                              title: path.endsWith('/create')
-                                  ? 'Add staff'
-                                  : 'Staff details',
-                              href: path,
-                          },
-                      ]),
-            ];
-        }
-        const staffTypesIndex = path.indexOf('/staff-types');
-        if (staffTypesIndex !== -1) {
-            const overview = path.slice(0, staffTypesIndex);
-            const list = `${overview}/staff-types`;
-            return [
-                { title: 'Overview', href: overview },
-                { title: 'Staff types', href: list },
-                ...(path === list
-                    ? []
-                    : [
-                          {
-                              title: 'Staff type details',
-                              href: path,
-                          },
-                      ]),
-            ];
-        }
-
-        return [{ title: 'Overview', href: path }];
-    }
-
-    return [];
+    return [list, { title: childTitle(path), href: path }];
 }

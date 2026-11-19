@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import InputError from '@/components/input-error';
+import { FixedActionBar } from '@/components/fixed-action-bar';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
@@ -131,29 +132,57 @@ export function FormActions({
     processing,
     processingLabel = 'Saving…',
     onSubmitClick,
+    fixed = false,
 }: {
     cancelHref?: string;
     submitLabel: string;
     processing: boolean;
     processingLabel?: string;
     onSubmitClick?: () => void;
+    fixed?: boolean;
 }) {
-    return (
-        <div className="flex flex-wrap items-center justify-end gap-2 pt-1">
+    const actions = (
+        <div
+            className={cn(
+                'flex flex-wrap items-center justify-end gap-2',
+                !fixed && 'pt-1',
+            )}
+        >
             {cancelHref && (
-                <Button variant="outline" asChild>
-                    <Link href={cancelHref}>Cancel</Link>
+                <Button
+                    variant="outline"
+                    className={
+                        fixed ? 'h-11 flex-1 sm:h-9 sm:flex-none' : undefined
+                    }
+                    asChild
+                    disabled={processing}
+                >
+                    <Link
+                        href={cancelHref}
+                        onClick={(event) => {
+                            if (processing) event.preventDefault();
+                        }}
+                        aria-disabled={processing || undefined}
+                        tabIndex={processing ? -1 : undefined}
+                    >
+                        Cancel
+                    </Link>
                 </Button>
             )}
             <Button
                 type={onSubmitClick ? 'button' : 'submit'}
                 onClick={onSubmitClick}
                 disabled={processing}
+                className={
+                    fixed ? 'h-11 flex-1 sm:h-9 sm:flex-none' : undefined
+                }
             >
                 {processing ? processingLabel : submitLabel}
             </Button>
         </div>
     );
+
+    return fixed ? <FixedActionBar>{actions}</FixedActionBar> : actions;
 }
 
 export function RequiredLegend() {

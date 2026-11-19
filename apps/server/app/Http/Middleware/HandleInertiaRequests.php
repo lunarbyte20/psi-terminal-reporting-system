@@ -2,8 +2,6 @@
 
 namespace App\Http\Middleware;
 
-use App\Modules\Organization\Models\Company;
-use App\Modules\Organization\Models\CompanyMembership;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Middleware;
@@ -38,42 +36,21 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $user = $request->user();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'auth' => [
-                'user' => $request->user(),
-                'is_super_admin' => $request->user()?->hasRole('super_admin') ?? false,
+                'user' => $user,
+                'role' => $user?->primaryRole()?->label(),
+                // Navigation only; every route still checks its own permission.
+                'can' => [
+                    'administer' => $user !== null && Gate::forUser($user)->allows('administer'),
+                    'viewAllTerminals' => $user !== null && Gate::forUser($user)->allows('view-all-terminals'),
+                ],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
-            'company' => $this->settingsCompany($request),
         ];
-    }
-
-    /** @return array{code: string, name: string, brand_color: string|null, logo_url: string|null, role: string}|null */
-    private function settingsCompany(Request $request): ?array
-    {
-        $user = $request->user();
-        if (! $request->is('settings/*') || $user === null || $user->hasRole('super_admin')) {
-            return null;
-        }
-
-        $code = $request->query('company', $request->session()->get('selected_company_code'));
-        if (! is_string($code) || $code === '') {
-            return null;
-        }
-
-        $company = Company::query()->where('code', $code)->first();
-        if ($company === null || ! Gate::forUser($user)->allows('enterWorkspace', $company)) {
-            $request->session()->forget('selected_company_code');
-
-            return null;
-        }
-
-        $request->session()->put('selected_company_code', $company->code);
-        $membership = CompanyMembership::query()->where('company_id', $company->id)
-            ->where('user_id', $user->id)->whereNull('revoked_at')->first();
-
-        return $company->workspaceDetails($membership?->role->value ?? '');
     }
 }

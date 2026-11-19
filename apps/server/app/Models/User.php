@@ -48,7 +48,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /** Each account holds exactly one role; null only for a broken record. */
-    public function role(): ?Role
+    public function primaryRole(): ?Role
     {
         $name = $this->getRoleNames()->first();
 
@@ -57,7 +57,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 
     public function hasRoleOf(Role ...$roles): bool
     {
-        return in_array($this->role(), $roles, true);
+        return in_array($this->primaryRole(), $roles, true);
     }
 
     public function isActive(): bool

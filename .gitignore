@@ -13,3 +13,6 @@ Thumbs.db
 **/.phpunit.result.cache
 **/storage/logs/*.log
 
+
+# Project-local development runtimes
+/.local/

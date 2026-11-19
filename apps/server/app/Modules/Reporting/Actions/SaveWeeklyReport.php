@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Reporting\Data\WeeklyReportInput;
 use App\Modules\Reporting\Enums\ReportStatus;
 use App\Modules\Reporting\Enums\SalesCategory;
+use App\Modules\Reporting\Enums\SaveIntent;
 use App\Modules\Reporting\Models\WeeklyReport;
 use App\Modules\Reporting\Support\Money;
 use App\Modules\Terminals\Models\VehicleType;
@@ -14,9 +15,11 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 /**
- * Saves the week's figures as a draft, or saves and submits them for review.
- * Totals are always computed here from the saved figures, never taken from
- * the browser, so dashboards and exports agree with what was encoded.
+ * Saves the week's figures as a draft, saves and submits them for review, or
+ * (Admin only, checked by the request) saves and approves them directly when
+ * she encodes the report herself. Totals are always computed here from the
+ * saved figures, never taken from the browser, so dashboards and exports
+ * agree with what was encoded.
  */
 class SaveWeeklyReport
 {
@@ -25,9 +28,9 @@ class SaveWeeklyReport
         private readonly RecordChange $audit,
     ) {}
 
-    public function execute(User $actor, WeeklyReport $report, WeeklyReportInput $input, bool $submit): WeeklyReport
+    public function execute(User $actor, WeeklyReport $report, WeeklyReportInput $input, SaveIntent $intent): WeeklyReport
     {
-        return DB::transaction(function () use ($actor, $report, $input, $submit): WeeklyReport {
+        return DB::transaction(function () use ($actor, $report, $input, $intent): WeeklyReport {
             $report = WeeklyReport::query()->whereKey($report->id)->lockForUpdate()->firstOrFail();
             if ($report->status === ReportStatus::Approved) {
                 throw ValidationException::withMessages(['report' => 'This report is approved. Ask the Admin to reopen it for correction.']);
@@ -37,12 +40,15 @@ class SaveWeeklyReport
             $this->saveSales($report, $input);
             $this->saveRidership($report, $input->ridership);
             $report->remarks = $input->remarks;
-            $report->key_issues = $input->keyIssues;
 
             $from = $report->status;
-            if ($submit && $from !== ReportStatus::Submitted) {
-                $report->status = ReportStatus::Submitted;
-                $report->submitted_at = now();
+            $report->status = $intent->targetStatus($from);
+            if ($report->status !== $from && $report->status !== ReportStatus::Draft) {
+                $report->submitted_at ??= now();
+            }
+            if ($report->status === ReportStatus::Approved) {
+                $report->approved_by = $actor->id;
+                $report->approved_at = now();
             }
             $report->save();
 
@@ -97,7 +103,7 @@ class SaveWeeklyReport
     private function figures(WeeklyReport $report): array
     {
         return [
-            ...$report->only([...SalesCategory::columns(), 'total_sales', 'total_ridership', 'remarks', 'key_issues']),
+            ...$report->only([...SalesCategory::columns(), 'total_sales', 'total_ridership', 'remarks']),
             'ridership' => $report->ridershipLines()->orderBy('vehicle_type_id')
                 ->get(['vehicle_type_id', 'passengers_per_trip', 'trips'])->toArray(),
         ];

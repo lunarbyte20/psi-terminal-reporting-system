@@ -1,20 +1,18 @@
 import { usePage } from '@inertiajs/react';
+import { PsiMark } from '@/components/psi-mark';
 
 export default function AppLogo() {
     const { name } = usePage().props;
 
     return (
         <>
-            <div className="flex aspect-square size-8 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-white p-0.5">
-                <img
-                    src="/images/orogroup-mark.jpg"
-                    alt="OroGroup logo"
-                    className="size-full object-contain"
-                />
-            </div>
+            <PsiMark className="h-9 w-16 group-data-[collapsible=icon]:w-8" />
             <div className="ml-1 grid flex-1 text-left text-sm">
                 <span className="mb-0.5 truncate leading-tight font-semibold">
                     {name}
+                </span>
+                <span className="truncate text-xs opacity-75">
+                    Park Solutions Inc.
                 </span>
             </div>
         </>

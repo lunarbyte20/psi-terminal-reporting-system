@@ -38,7 +38,7 @@ class UserAccountController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->role()?->label(),
+                'role' => $user->primaryRole()?->label(),
                 'supervisor' => $user->supervisor?->name,
                 'active' => $user->isActive(),
                 'awaiting_first_sign_in' => $user->must_change_password,
@@ -85,7 +85,7 @@ class UserAccountController extends Controller
                 'id' => $user->id,
                 'name' => $user->name,
                 'email' => $user->email,
-                'role' => $user->role()?->value,
+                'role' => $user->primaryRole()?->value,
                 'supervisor_id' => $user->supervisor()->value('id'),
                 'active' => $user->isActive(),
                 'awaiting_first_sign_in' => $user->must_change_password,
@@ -131,9 +131,9 @@ class UserAccountController extends Controller
     /** @return list<array{id: int, name: string}> */
     private function supervisorOptions(?User $user): array
     {
-        return Supervisor::query()->active()
+        return array_values(Supervisor::query()->active()
             ->where(fn ($query) => $query->whereNull('user_id')->when($user !== null, fn ($inner) => $inner->orWhere('user_id', $user?->id)))
             ->orderBy('name')->limit(200)->get(['id', 'name'])
-            ->map(fn (Supervisor $supervisor) => ['id' => $supervisor->id, 'name' => $supervisor->name])->values()->all();
+            ->map(fn (Supervisor $supervisor) => ['id' => $supervisor->id, 'name' => $supervisor->name])->all());
     }
 }

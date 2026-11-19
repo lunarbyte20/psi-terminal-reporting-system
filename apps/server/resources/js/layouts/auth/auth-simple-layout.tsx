@@ -1,4 +1,5 @@
 import { Link } from '@inertiajs/react';
+import { PsiMark } from '@/components/psi-mark';
 import { home } from '@/routes';
 import type { AuthLayoutProps } from '@/types';
 
@@ -8,7 +9,7 @@ export default function AuthSimpleLayout({
     description,
 }: AuthLayoutProps) {
     return (
-        <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
+        <div className="flex min-h-svh flex-col items-center justify-center gap-6 border-t-8 border-[var(--psi-yellow)] bg-background p-6 md:p-10">
             <div className="w-full max-w-sm">
                 <div className="flex flex-col gap-8">
                     <div className="flex flex-col items-center gap-4">
@@ -16,16 +17,10 @@ export default function AuthSimpleLayout({
                             href={home()}
                             className="flex flex-col items-center gap-2 font-medium"
                         >
-                            <img
-                                src="/images/orogroup-logo-light.png"
-                                alt="OroGroup"
-                                className="h-12 w-auto object-contain dark:hidden"
-                            />
-                            <img
-                                src="/images/orogroup-logo-dark.png"
-                                alt="OroGroup"
-                                className="hidden h-12 w-auto object-contain dark:block"
-                            />
+                            <PsiMark className="h-auto w-44" />
+                            <span className="text-sm text-muted-foreground">
+                                Park Solutions Inc.
+                            </span>
                             <span className="sr-only">{title}</span>
                         </Link>
 

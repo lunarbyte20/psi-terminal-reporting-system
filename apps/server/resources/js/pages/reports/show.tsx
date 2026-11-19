@@ -1,0 +1,246 @@
+import { Head, Link } from '@inertiajs/react';
+import { Pencil } from 'lucide-react';
+import Heading from '@/components/heading';
+import { ReportStatusBadge } from '@/components/report-status-badge';
+import { Button } from '@/components/ui/button';
+import {
+    formatCount,
+    formatDate,
+    formatDateTime,
+    formatPeso,
+} from '@/lib/format';
+import { TerminalIssues } from '@/components/terminal-issues';
+import type {
+    OperationalIssue,
+    SalesCategory,
+    WeeklyReportDetails,
+} from '@/types';
+import { ReviewPanel } from './review-panel';
+import { WeekComparison } from './week-comparison';
+
+export default function ReportShow({
+    report,
+    issues,
+    can,
+    categories,
+}: {
+    report: WeeklyReportDetails;
+    issues: OperationalIssue[];
+    can: { update: boolean; review: boolean; reopen: boolean };
+    categories: SalesCategory[];
+}) {
+    const returnNote =
+        report.status === 'returned'
+            ? report.history.find((entry) => entry.comment)
+            : undefined;
+    const ridership = report.ridership.filter(
+        (row) => row.trips > 0 || row.passengers_per_trip > 0,
+    );
+
+    return (
+        <>
+            <Head title={`${report.terminal.name} · ${report.week.label}`} />
+            <main className="grid w-full grid-cols-1 gap-6 p-6">
+                <Heading
+                    title={report.terminal.name}
+                    description={`Week of ${report.week.label} · due ${formatDate(report.week.due_on)}${report.supervisor ? ` · ${report.supervisor}` : ''}`}
+                    badge={<ReportStatusBadge status={report.status} />}
+                    back={{
+                        href: `/reports?week=${report.week.id}`,
+                        label: 'Back to weekly reports',
+                    }}
+                />
+
+                {returnNote && (
+                    <div
+                        role="status"
+                        className="rounded-lg border border-status-danger-border bg-status-danger-bg p-4 text-status-danger-fg"
+                    >
+                        <p className="font-semibold">Returned for correction</p>
+                        <p className="mt-1 text-sm whitespace-pre-line">
+                            {returnNote.comment}
+                        </p>
+                    </div>
+                )}
+
+                {can.update && (
+                    <div className="flex justify-end">
+                        <Button variant="edit" asChild>
+                            <Link href={`/reports/${report.id}/edit`}>
+                                <Pencil aria-hidden="true" />
+                                {report.status === 'returned'
+                                    ? 'Fix and resubmit'
+                                    : 'Edit report'}
+                            </Link>
+                        </Button>
+                    </div>
+                )}
+
+                {can.review && (
+                    <ReviewPanel reportId={report.id} mode="review" />
+                )}
+
+                <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+                    <section
+                        className="rounded-lg border bg-card p-5 sm:p-6"
+                        aria-labelledby="sales-heading"
+                    >
+                        <h2
+                            id="sales-heading"
+                            className="text-base font-semibold"
+                        >
+                            Sales
+                        </h2>
+                        <dl className="mt-3 divide-y">
+                            {categories.map((category) => (
+                                <div
+                                    key={category.key}
+                                    className="flex justify-between gap-4 py-2 text-sm"
+                                >
+                                    <dt className="text-muted-foreground">
+                                        {category.label}
+                                    </dt>
+                                    <dd className="tabular-nums">
+                                        {formatPeso(report.sales[category.key])}
+                                    </dd>
+                                </div>
+                            ))}
+                            <div className="flex justify-between gap-4 pt-3 font-semibold">
+                                <dt>Total sales</dt>
+                                <dd className="tabular-nums">
+                                    {formatPeso(report.total_sales)}
+                                </dd>
+                            </div>
+                        </dl>
+                    </section>
+
+                    <section
+                        className="rounded-lg border bg-card p-5 sm:p-6"
+                        aria-labelledby="ridership-heading"
+                    >
+                        <h2
+                            id="ridership-heading"
+                            className="text-base font-semibold"
+                        >
+                            Ridership
+                        </h2>
+                        {ridership.length === 0 ? (
+                            <p className="mt-3 text-sm text-muted-foreground">
+                                No ridership recorded.
+                            </p>
+                        ) : (
+                            <div className="mt-3 overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead className="text-left text-muted-foreground">
+                                        <tr>
+                                            <th className="py-2 font-medium">
+                                                Vehicle type
+                                            </th>
+                                            <th className="py-2 text-right font-medium">
+                                                Passengers per trip
+                                            </th>
+                                            <th className="py-2 text-right font-medium">
+                                                Trips
+                                            </th>
+                                            <th className="py-2 text-right font-medium">
+                                                Ridership
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y">
+                                        {ridership.map((row) => (
+                                            <tr key={row.vehicle_type_id}>
+                                                <td className="py-2">
+                                                    {row.vehicle_type}
+                                                </td>
+                                                <td className="py-2 text-right tabular-nums">
+                                                    {formatCount(
+                                                        row.passengers_per_trip,
+                                                    )}
+                                                </td>
+                                                <td className="py-2 text-right tabular-nums">
+                                                    {formatCount(row.trips)}
+                                                </td>
+                                                <td className="py-2 text-right tabular-nums">
+                                                    {formatCount(row.ridership)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr className="font-semibold">
+                                            <td className="pt-3" colSpan={3}>
+                                                Total ridership
+                                            </td>
+                                            <td className="pt-3 text-right tabular-nums">
+                                                {formatCount(
+                                                    report.total_ridership,
+                                                )}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        )}
+                    </section>
+                </div>
+
+                <WeekComparison
+                    comparison={report.comparison}
+                    currentTotal={report.total_sales}
+                />
+
+                <TerminalIssues
+                    terminal={report.terminal}
+                    issues={issues}
+                    canManage={false}
+                />
+
+                {report.remarks && (
+                    <section className="rounded-lg border bg-card p-5 sm:p-6">
+                        <h2 className="text-base font-semibold">Remarks</h2>
+                        <p className="mt-2 text-sm whitespace-pre-line">
+                            {report.remarks}
+                        </p>
+                    </section>
+                )}
+
+                {can.reopen && (
+                    <ReviewPanel reportId={report.id} mode="reopen" />
+                )}
+
+                <section
+                    className="rounded-lg border bg-card p-5 sm:p-6"
+                    aria-labelledby="history-heading"
+                >
+                    <h2
+                        id="history-heading"
+                        className="text-base font-semibold"
+                    >
+                        History
+                    </h2>
+                    <ol className="mt-3 space-y-3">
+                        {report.history.map((entry) => (
+                            <li key={entry.id} className="text-sm">
+                                <p>
+                                    <span className="font-medium">
+                                        {entry.to_status}
+                                    </span>{' '}
+                                    <span className="text-muted-foreground">
+                                        by {entry.by} ·{' '}
+                                        {formatDateTime(entry.at)}
+                                    </span>
+                                </p>
+                                {entry.comment && (
+                                    <p className="mt-0.5 whitespace-pre-line text-muted-foreground">
+                                        “{entry.comment}”
+                                    </p>
+                                )}
+                            </li>
+                        ))}
+                    </ol>
+                </section>
+            </main>
+        </>
+    );
+}

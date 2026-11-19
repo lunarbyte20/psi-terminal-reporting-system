@@ -26,7 +26,7 @@ class SaveUserAccount
             $creating = $user === null;
             $user ??= new User;
 
-            if (! $creating && $user->is($actor) && $role !== $user->role()) {
+            if (! $creating && $user->is($actor) && $role !== $user->primaryRole()) {
                 throw ValidationException::withMessages(['role' => 'You cannot change your own role.']);
             }
 
@@ -81,7 +81,7 @@ class SaveUserAccount
         return [
             'name' => $user->name,
             'email' => $user->email,
-            'role' => $user->role()?->value,
+            'role' => $user->primaryRole()?->value,
             'supervisor_id' => $user->supervisor()->value('id'),
         ];
     }

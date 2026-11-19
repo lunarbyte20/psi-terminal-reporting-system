@@ -1,5 +1,6 @@
 import { ArrowUp } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { FIXED_ACTION_BAR_HEIGHT } from '@/components/fixed-action-bar';
 import { Button } from '@/components/ui/button';
 
 const SHOW_AFTER_SCROLL_PX = 240;
@@ -42,7 +43,11 @@ export function BackToTopButton() {
             size="sm"
             onClick={scrollToTop}
             aria-label="Back to top"
-            className="fixed right-5 bottom-5 z-40 rounded-full bg-card/95 shadow-md backdrop-blur-xs"
+            // Sits above a page's fixed action bar (Save draft / Submit) when one is shown.
+            style={{
+                bottom: `calc(var(${FIXED_ACTION_BAR_HEIGHT}, 0px) + 1.25rem)`,
+            }}
+            className="fixed right-5 z-40 rounded-full bg-card/95 shadow-md backdrop-blur-xs"
         >
             <ArrowUp aria-hidden="true" />
             <span>Back to top</span>

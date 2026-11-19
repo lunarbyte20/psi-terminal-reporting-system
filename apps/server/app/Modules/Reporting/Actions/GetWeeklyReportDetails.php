@@ -10,6 +10,7 @@ use App\Modules\Reporting\Models\WeeklyReport;
 use App\Modules\Reporting\Support\Money;
 use App\Modules\Reporting\Support\SalesComparison;
 use App\Modules\Terminals\Models\VehicleType;
+use Illuminate\Support\Collection;
 
 /**
  * Everything the report page and the report form need: the figures, the
@@ -41,7 +42,6 @@ class GetWeeklyReportDetails
             'total_sales' => $report->total_sales,
             'total_ridership' => $report->total_ridership,
             'remarks' => $report->remarks,
-            'key_issues' => $report->key_issues,
             'submitted_at' => $report->submitted_at?->toIso8601String(),
             'approved_at' => $report->approved_at?->toIso8601String(),
             'ridership' => $this->ridershipRows($report, $lines),
@@ -66,7 +66,7 @@ class GetWeeklyReportDetails
      * report already used. Passengers per trip defaults to the terminal's last
      * report so supervisors usually only type the trips.
      *
-     * @param  \Illuminate\Support\Collection<int, RidershipLine>  $lines
+     * @param  Collection<int, RidershipLine>  $lines
      * @return list<array<string, mixed>>
      */
     private function ridershipRows(WeeklyReport $report, $lines): array
@@ -80,10 +80,10 @@ class GetWeeklyReportDetails
         $lastPassengers = RidershipLine::query()->where('weekly_report_id', $lastReportId ?? 0)
             ->pluck('passengers_per_trip', 'vehicle_type_id');
 
-        return VehicleType::query()
+        return array_values(VehicleType::query()
             ->where(fn ($query) => $query->whereNull('archived_at')->orWhereIn('id', $lines->keys()))
             ->ordered()->get(['id', 'name'])
-            ->map(function (VehicleType $type) use ($lines, $lastPassengers) {
+            ->map(function (VehicleType $type) use ($lines, $lastPassengers): array {
                 $line = $lines->get($type->id);
 
                 return [
@@ -94,6 +94,6 @@ class GetWeeklyReportDetails
                     'trips' => $line->trips ?? 0,
                     'ridership' => $line->ridership ?? 0,
                 ];
-            })->values()->all();
+            })->all());
     }
 }

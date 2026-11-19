@@ -24,7 +24,11 @@ class ReportingWeek extends Model
         return $this->hasMany(WeeklyReport::class);
     }
 
-    /** Weeks that have begun, newest first: the only weeks a report can be filed for. @param Builder<self> $query */
+    /**
+     * Weeks that have begun, newest first: the only weeks a report can be filed for.
+     *
+     * @param  Builder<self>  $query
+     */
     public function scopeStarted(Builder $query): void
     {
         $query->whereDate('starts_on', '<=', today())->orderByDesc('starts_on');
@@ -32,6 +36,10 @@ class ReportingWeek extends Model
 
     public function label(): string
     {
+        if ($this->starts_on->isSameDay($this->ends_on)) {
+            return $this->starts_on->format('M j, Y');
+        }
+
         return $this->starts_on->isSameMonth($this->ends_on)
             ? $this->starts_on->format('M j').'–'.$this->ends_on->format('j, Y')
             : $this->starts_on->format('M j').' – '.$this->ends_on->format('M j, Y');

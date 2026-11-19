@@ -39,15 +39,15 @@ export default function Profile({
 
                 <RequirementGuide
                     title="Profile settings guide"
-                    summary="Your name and email identify your admin account across all assigned companies."
+                    summary="Your name and email identify you on reports, reviews and the audit trail."
                     items={[
                         {
                             label: 'Display name',
-                            detail: 'Shown in company access lists and recorded in audit logs when you make changes.',
+                            detail: 'Shown on the reports you encode or review and recorded in the audit trail.',
                         },
                         {
                             label: 'Sign-in email',
-                            detail: 'Used to sign in to the admin web app across all companies assigned to you.',
+                            detail: 'Used to sign in. Changing it requires confirming the new address.',
                         },
                     ]}
                 />

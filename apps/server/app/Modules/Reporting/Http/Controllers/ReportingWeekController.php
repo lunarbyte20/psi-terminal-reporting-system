@@ -6,7 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Modules\Reporting\Actions\GenerateReportingWeeks;
 use App\Modules\Reporting\Http\Requests\GenerateReportingWeeksRequest;
 use App\Modules\Reporting\Models\ReportingWeek;
-use App\Support\Audit\RecordChange;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -33,15 +32,12 @@ class ReportingWeekController extends Controller
         ]);
     }
 
-    public function store(GenerateReportingWeeksRequest $request, GenerateReportingWeeks $action, RecordChange $audit): RedirectResponse
+    public function store(GenerateReportingWeeksRequest $request, GenerateReportingWeeks $action): RedirectResponse
     {
         $month = CarbonImmutable::createFromFormat('!Y-m', $request->string('month')->toString());
         $created = $action->execute($month->year, $month->month);
 
         $label = $month->format('F Y');
-        if ($created > 0) {
-            $audit->execute($request->user(), $request->user(), 'reporting_weeks.generated', null, ['month' => $month->format('Y-m'), 'created' => $created]);
-        }
         Inertia::flash('toast', $created > 0
             ? ['type' => 'success', 'message' => "Added {$created} reporting weeks for {$label}."]
             : ['type' => 'info', 'message' => "{$label} already has all its reporting weeks."]);

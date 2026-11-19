@@ -12,7 +12,12 @@ export type User = {
 
 export type Auth = {
     user: User;
-    is_super_admin: boolean;
+    role: string | null;
+    /** For showing navigation only; the server checks every action again. */
+    can: {
+        administer: boolean;
+        viewAllTerminals: boolean;
+    };
 };
 
 export type Passkey = {

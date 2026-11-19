@@ -81,39 +81,43 @@
     --status-danger-bg: oklch(0.95 0.04 25);
     --status-danger-fg: oklch(0.38 0.16 25);
     --status-danger-border: oklch(0.82 0.1 25);
-    --background: oklch(0.985 0.005 258);
-    --foreground: oklch(0.145 0 0);
+    /* PSI brand: blue navigation and yellow highlights from the official logo. */
+    --psi-blue: #23118c;
+    --psi-yellow: #ffe600;
+    /* Surfaces follow the management prototype: soft grey page, white cards, white sidebar. */
+    --background: #f5f6fb;
+    --foreground: #17182b;
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.145 0 0);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.43 0.13 258);
+    --primary: var(--psi-blue);
     --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
+    --secondary: #fff7b3;
+    --secondary-foreground: #23118c;
     --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
+    --muted-foreground: #6b6d82;
+    --accent: #fff7b3;
+    --accent-foreground: #23118c;
     --destructive: oklch(0.577 0.245 27.325);
     --destructive-foreground: oklch(0.577 0.245 27.325);
-    --border: oklch(0.89 0.01 258);
-    --input: oklch(0.89 0.01 258);
-    --ring: oklch(0.87 0 0);
+    --border: #e8e9f0;
+    --input: #dcdde8;
+    --ring: #7965da;
     --chart-1: oklch(0.646 0.222 41.116);
     --chart-2: oklch(0.6 0.118 184.704);
     --chart-3: oklch(0.398 0.07 227.392);
     --chart-4: oklch(0.828 0.189 84.429);
     --chart-5: oklch(0.769 0.188 70.08);
     --radius: 0.625rem;
-    --sidebar: oklch(0.25 0.04 258);
-    --sidebar-foreground: oklch(0.96 0.01 258);
-    --sidebar-primary: oklch(0.67 0.12 258);
-    --sidebar-primary-foreground: oklch(0.98 0 0);
-    --sidebar-accent: oklch(0.36 0.05 258);
-    --sidebar-accent-foreground: oklch(0.98 0 0);
-    --sidebar-border: oklch(0.39 0.04 258);
-    --sidebar-ring: oklch(0.67 0.12 258);
+    --sidebar: oklch(1 0 0);
+    --sidebar-foreground: #55576d;
+    --sidebar-primary: var(--psi-blue);
+    --sidebar-primary-foreground: oklch(1 0 0);
+    --sidebar-accent: #eeeeff;
+    --sidebar-accent-foreground: var(--psi-blue);
+    --sidebar-border: #e8e9f0;
+    --sidebar-ring: var(--psi-blue);
 }
 
 .dark {
@@ -132,8 +136,8 @@
     --card-foreground: oklch(0.985 0 0);
     --popover: oklch(0.25 0.018 258);
     --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.72 0.1 258);
-    --primary-foreground: oklch(0.18 0.02 258);
+    --primary: #ffe600;
+    --primary-foreground: #1b0d70;
     --secondary: oklch(0.269 0 0);
     --secondary-foreground: oklch(0.985 0 0);
     --muted: oklch(0.269 0 0);
@@ -150,14 +154,14 @@
     --chart-3: oklch(0.769 0.188 70.08);
     --chart-4: oklch(0.627 0.265 303.9);
     --chart-5: oklch(0.645 0.246 16.439);
-    --sidebar: oklch(0.22 0.04 258);
-    --sidebar-foreground: oklch(0.96 0.01 258);
-    --sidebar-primary: oklch(0.67 0.12 258);
-    --sidebar-primary-foreground: oklch(0.98 0 0);
-    --sidebar-accent: oklch(0.33 0.05 258);
-    --sidebar-accent-foreground: oklch(0.98 0 0);
-    --sidebar-border: oklch(0.37 0.04 258);
-    --sidebar-ring: oklch(0.67 0.12 258);
+    --sidebar: oklch(0.25 0.018 258);
+    --sidebar-foreground: #d7d8e8;
+    --sidebar-primary: #a9a8f5;
+    --sidebar-primary-foreground: #0d0c4a;
+    --sidebar-accent: #2b2a6e;
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border: oklch(0.36 0.018 258);
+    --sidebar-ring: #a9a8f5;
 }
 
 @layer base {
@@ -167,5 +171,27 @@
 
     body {
         @apply bg-background text-foreground;
+    }
+}
+
+/* Management report printout: legal-size long bond (8.5 × 13 in), portrait, 0.5 in margins. */
+@page {
+    size: 8.5in 13in;
+    margin: 0.5in;
+}
+
+@media print {
+    [data-slot='sidebar'],
+    [data-slot='sidebar-gap'],
+    [data-slot='sidebar-container'],
+    header[class*='border-sidebar-border'],
+    .print\:hidden {
+        display: none !important;
+    }
+
+    body {
+        background: #fff;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 }

@@ -38,11 +38,11 @@ export default function Security(props: Props) {
 
                 <RequirementGuide
                     title="Account security guide"
-                    summary="Keep your admin account secure. If you signed in with a one-time temporary password, change it here first."
+                    summary="Keep your account secure. If you signed in with a one-time temporary password, change it here first."
                     items={[
                         {
                             label: 'First sign-in password change',
-                            detail: 'New timekeeper and payroll officer accounts must set a new password before entering any company workspace.',
+                            detail: 'New accounts must replace their temporary password before opening any other page.',
                         },
                         {
                             label: 'Two-factor & passkeys',

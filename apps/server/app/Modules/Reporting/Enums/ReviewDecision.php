@@ -9,12 +9,12 @@ enum ReviewDecision: string
     case Return = 'return';
     case Reopen = 'reopen';
 
-    public function from(): ReportStatus
+    public function fromStatus(): ReportStatus
     {
         return $this === self::Reopen ? ReportStatus::Approved : ReportStatus::Submitted;
     }
 
-    public function to(): ReportStatus
+    public function toStatus(): ReportStatus
     {
         return $this === self::Approve ? ReportStatus::Approved : ReportStatus::Returned;
     }

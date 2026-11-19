@@ -2,14 +2,11 @@
 
 namespace App\Providers;
 
-use App\Modules\Organization\Models\Company;
-use App\Modules\Organization\Policies\CompanyPolicy;
-use App\Modules\Organization\Support\CurrentCompany;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Console\ServeCommand;
 use Illuminate\Support\Facades\Date;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Validation\Rules\Password;
 
@@ -20,7 +17,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        $this->app->scoped(CurrentCompany::class);
+        //
     }
 
     /**
@@ -30,7 +27,6 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->configureDefaults();
         $this->configureLocalWindowsServer();
-        Gate::policy(Company::class, CompanyPolicy::class);
     }
 
     /**
@@ -39,6 +35,9 @@ class AppServiceProvider extends ServiceProvider
     protected function configureDefaults(): void
     {
         Date::use(CarbonImmutable::class);
+
+        // Surface accidental queries inside loops during development and tests.
+        Model::preventLazyLoading(! app()->isProduction());
 
         DB::prohibitDestructiveCommands(
             app()->isProduction(),

@@ -7,29 +7,34 @@ use App\Modules\Accounts\Enums\Role;
 use App\Modules\Reporting\Enums\ReportStatus;
 use App\Modules\Reporting\Models\ReportingWeek;
 use App\Modules\Terminals\Models\Terminal;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\JoinClause;
+use Illuminate\Pagination\LengthAwarePaginator;
 
 /**
  * Lists every terminal the viewer may see with the state of its report for
  * one week, including terminals that have not started one. Supervisors see
  * only their own terminals.
+ *
+ * @phpstan-type BoardRow array{terminal_id: int, terminal: string, supervisor: string|null, report_id: mixed, status: mixed, total_sales: mixed, total_ridership: int|null, submitted_at: mixed}
  */
 class GetSubmissionBoard
 {
     /**
      * @param  array{q: string, status: string, supervisor: int|null}  $filters
-     * @return array{rows: LengthAwarePaginator<int, array<string, mixed>>, counts: array<string, int>}
+     * @return array{rows: LengthAwarePaginator<int, BoardRow>, counts: array<string, int>}
      */
     public function execute(User $viewer, ReportingWeek $week, array $filters): array
     {
         $base = $this->visibleTerminals($viewer, $week, $filters);
 
-        $counts = (clone $base)->toBase()
+        $counts = [];
+        $states = (clone $base)->toBase()
             ->selectRaw("coalesce(weekly_reports.status, 'not_started') as state, count(*) as total")
-            ->groupBy('state')->pluck('total', 'state')
-            ->map(fn ($total) => (int) $total)->all();
+            ->groupBy('state')->get();
+        foreach ($states as $state) {
+            $counts[(string) $state->state] = (int) $state->total;
+        }
 
         $rows = $base
             ->when($filters['status'] === 'not_started', fn (Builder $query) => $query->whereNull('weekly_reports.id'))
@@ -68,7 +73,7 @@ class GetSubmissionBoard
                 ->where('weekly_reports.reporting_week_id', '=', $week->id))
             // Archived terminals stay listed for weeks in which they still filed a report.
             ->where(fn (Builder $query) => $query->whereNull('terminals.archived_at')->orWhereNotNull('weekly_reports.id'))
-            ->when($viewer->hasRoleOf(Role::Supervisor), fn (Builder $query) => $query->where('terminals.supervisor_id', $viewer->supervisor?->id ?? 0))
+            ->when($viewer->hasRoleOf(Role::Supervisor), fn (Builder $query) => $query->where('terminals.supervisor_id', $viewer->supervisor->id ?? 0))
             ->when($filters['supervisor'] !== null, fn (Builder $query) => $query->where('terminals.supervisor_id', $filters['supervisor']))
             ->when($filters['q'] !== '', fn (Builder $query) => $query->where('terminals.name', 'like', '%'.addcslashes($filters['q'], '%_\\').'%'));
     }

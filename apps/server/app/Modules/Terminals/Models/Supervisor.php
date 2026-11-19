@@ -3,18 +3,18 @@
 namespace App\Modules\Terminals\Models;
 
 use App\Models\User;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $name
  * @property string|null $phone
  * @property int|null $user_id
- * @property Carbon|null $archived_at
+ * @property CarbonImmutable|null $archived_at
  * @property-read User|null $user
  */
 class Supervisor extends Model

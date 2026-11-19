@@ -2,17 +2,17 @@
 
 namespace App\Modules\Terminals\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $name
  * @property string|null $location
  * @property int|null $supervisor_id
- * @property Carbon|null $archived_at
+ * @property CarbonImmutable|null $archived_at
  * @property-read Supervisor|null $supervisor
  */
 class Terminal extends Model

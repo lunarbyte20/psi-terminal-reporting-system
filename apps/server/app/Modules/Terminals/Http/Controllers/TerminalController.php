@@ -95,7 +95,7 @@ class TerminalController extends Controller
     /** @return list<array{id: int, name: string}> */
     private function supervisorOptions(): array
     {
-        return Supervisor::query()->active()->orderBy('name')->limit(200)->get(['id', 'name'])
-            ->map(fn (Supervisor $supervisor) => ['id' => $supervisor->id, 'name' => $supervisor->name])->values()->all();
+        return array_values(Supervisor::query()->active()->orderBy('name')->limit(200)->get(['id', 'name'])
+            ->map(fn (Supervisor $supervisor) => ['id' => $supervisor->id, 'name' => $supervisor->name])->all());
     }
 }

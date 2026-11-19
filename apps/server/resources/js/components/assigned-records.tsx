@@ -10,7 +10,7 @@ import {
     TableHeader,
     TableRow,
 } from '@/components/ui/table';
-import type { PageOf } from '@/types';
+import type { Paginated } from '@/types';
 
 type AssignedRecord = {
     id: number;
@@ -29,7 +29,7 @@ export function AssignedRecords({
     title: string;
     recordLabel: string;
     emptyMessage: string;
-    records: PageOf<AssignedRecord> & { total: number };
+    records: Paginated<AssignedRecord>;
     baseUrl: string;
 }) {
     return (

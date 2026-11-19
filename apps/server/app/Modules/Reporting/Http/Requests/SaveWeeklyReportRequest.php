@@ -4,6 +4,7 @@ namespace App\Modules\Reporting\Http\Requests;
 
 use App\Modules\Reporting\Data\WeeklyReportInput;
 use App\Modules\Reporting\Enums\SalesCategory;
+use App\Modules\Reporting\Enums\SaveIntent;
 use App\Modules\Reporting\Models\WeeklyReport;
 use App\Modules\Reporting\Support\Money;
 use Illuminate\Foundation\Http\FormRequest;
@@ -16,7 +17,12 @@ class SaveWeeklyReportRequest extends FormRequest
     {
         $report = $this->route('report');
 
-        return $report instanceof WeeklyReport && Gate::allows('update', $report);
+        if (! $report instanceof WeeklyReport || ! Gate::allows('update', $report)) {
+            return false;
+        }
+
+        // Only the Admin may approve while encoding; supervisors always go through review.
+        return $this->input('intent') !== SaveIntent::Approve->value || Gate::allows('administer');
     }
 
     /** @return array<string, mixed> */
@@ -34,8 +40,7 @@ class SaveWeeklyReportRequest extends FormRequest
             'ridership.*.passengers_per_trip' => ['required', 'integer', 'min:0', 'max:500'],
             'ridership.*.trips' => ['required', 'integer', 'min:0', 'max:1000000'],
             'remarks' => ['nullable', 'string', 'max:2000'],
-            'key_issues' => ['nullable', 'string', 'max:2000'],
-            'intent' => ['required', Rule::in(['save', 'submit'])],
+            'intent' => ['required', Rule::enum(SaveIntent::class)],
         ];
     }
 
@@ -59,9 +64,9 @@ class SaveWeeklyReportRequest extends FormRequest
         return $names;
     }
 
-    public function submitting(): bool
+    public function intent(): SaveIntent
     {
-        return $this->input('intent') === 'submit';
+        return SaveIntent::from($this->string('intent')->toString());
     }
 
     public function toInput(): WeeklyReportInput
@@ -79,7 +84,7 @@ class SaveWeeklyReportRequest extends FormRequest
             'trips' => (int) $line['trips'],
         ], array_values($data['ridership'] ?? []));
 
-        return new WeeklyReportInput($sales, $ridership, $this->cleanText($data['remarks'] ?? null), $this->cleanText($data['key_issues'] ?? null));
+        return new WeeklyReportInput($sales, $ridership, $this->cleanText($data['remarks'] ?? null));
     }
 
     private function cleanText(mixed $value): ?string

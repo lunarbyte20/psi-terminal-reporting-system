@@ -2,15 +2,15 @@
 
 namespace App\Modules\Terminals\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Support\Carbon;
 
 /**
  * @property int $id
  * @property string $name
  * @property int $sort_order
- * @property Carbon|null $archived_at
+ * @property CarbonImmutable|null $archived_at
  */
 class VehicleType extends Model
 {

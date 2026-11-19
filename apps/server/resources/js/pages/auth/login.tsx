@@ -14,7 +14,7 @@ type Props = { status?: string; canResetPassword: boolean };
 export default function Login({ status, canResetPassword }: Props) {
     return (
         <>
-            <Head title="Admin sign in" />
+            <Head title="Sign in" />
             <Form
                 {...store.form()}
                 resetOnSuccess={['password']}
@@ -23,7 +23,7 @@ export default function Login({ status, canResetPassword }: Props) {
                 {({ processing, errors }) => (
                     <>
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Admin email</Label>
+                            <Label htmlFor="email">Email address</Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -65,6 +65,6 @@ export default function Login({ status, canResetPassword }: Props) {
 }
 
 Login.layout = {
-    title: 'Admin sign in',
-    description: 'Use the admin account created for you.',
+    title: 'Welcome back',
+    description: 'Sign in with the account the Admin created for you.',
 };

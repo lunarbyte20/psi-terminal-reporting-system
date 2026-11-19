@@ -27,18 +27,18 @@ class ReviewWeeklyReport
 
         DB::transaction(function () use ($actor, $report, $decision, $reason): void {
             $report = WeeklyReport::query()->whereKey($report->id)->lockForUpdate()->firstOrFail();
-            if ($report->status !== $decision->from()) {
+            if ($report->status !== $decision->fromStatus()) {
                 throw ValidationException::withMessages([
                     'review' => "This report is now \"{$report->status->label()}\". Reload the page to see the latest version.",
                 ]);
             }
 
-            $approved = $decision->to() === ReportStatus::Approved;
-            $report->status = $decision->to();
+            $approved = $decision->toStatus() === ReportStatus::Approved;
+            $report->status = $decision->toStatus();
             $report->approved_by = $approved ? $actor->id : null;
             $report->approved_at = $approved ? now() : null;
             $report->save();
-            $this->transition->execute($actor, $report, $decision->from(), $decision->to(), $approved ? null : $reason);
+            $this->transition->execute($actor, $report, $decision->fromStatus(), $decision->toStatus(), $approved ? null : $reason);
         });
     }
 }

@@ -4,9 +4,9 @@ namespace App\Modules\Reporting\Models;
 
 use App\Models\User;
 use App\Modules\Reporting\Enums\ReportStatus;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Support\Carbon;
 
 /**
  * Append-only history of a report's workflow, shown on the report page.
@@ -17,7 +17,7 @@ use Illuminate\Support\Carbon;
  * @property ReportStatus|null $from_status
  * @property ReportStatus $to_status
  * @property string|null $comment
- * @property Carbon $created_at
+ * @property CarbonImmutable $created_at
  * @property-read User $user
  */
 class ReportStatusChange extends Model

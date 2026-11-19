@@ -23,7 +23,7 @@ export default function Appearance() {
                     items={[
                         {
                             label: 'Consistent status colors',
-                            detail: 'Status badges stay readable in both light and dark modes regardless of company accent colors.',
+                            detail: 'Status badges stay readable in both light and dark modes.',
                         },
                     ]}
                 />
