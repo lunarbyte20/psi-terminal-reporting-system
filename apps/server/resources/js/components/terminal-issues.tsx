@@ -1,3 +1,5 @@
+import { t, useLocale } from '@/lib/i18n';
+import { IssueTags } from '@/components/issue-tags';
 import { Link } from '@inertiajs/react';
 import { IssueDialog } from '@/components/issue-dialog';
 import { IssueStatusBadge } from '@/components/issue-status-badge';
@@ -20,6 +22,7 @@ export function TerminalIssues({
     statuses?: Option[];
     canManage: boolean;
 }) {
+    useLocale();
     const manageable = canManage && statuses !== undefined;
 
     return (
@@ -33,25 +36,29 @@ export function TerminalIssues({
                         id="terminal-issues-heading"
                         className="text-[15px] font-bold"
                     >
-                        Issues & Action Items for this Terminal
+                        {t('Issues & Action Items for this Terminal')}
                     </h2>
                     <p className="mt-1 text-sm text-muted-foreground">
                         {manageable
-                            ? 'Add operational issues for this terminal here. They remain active across reporting weeks until completed.'
-                            : 'Open issues for this terminal. They remain active across reporting weeks until completed.'}
+                            ? t(
+                                  'Add operational issues for this terminal here. They remain active across reporting weeks until completed.',
+                              )
+                            : t(
+                                  'Open issues for this terminal. They remain active across reporting weeks until completed.',
+                              )}
                     </p>
                 </div>
                 <Link
                     href={`/issues?terminal=${terminal.id}`}
                     className="text-sm underline underline-offset-4"
                 >
-                    View all
+                    {t('View all')}
                 </Link>
             </div>
 
             {issues.length === 0 ? (
                 <p className="py-2 text-sm text-muted-foreground">
-                    No open issues recorded for this terminal.
+                    {t('No open issues recorded for this terminal.')}
                 </p>
             ) : (
                 <ul className="divide-y">
@@ -62,14 +69,16 @@ export function TerminalIssues({
                         >
                             <div className="min-w-0 space-y-1">
                                 <p className="font-medium">{issue.key_issue}</p>
+                                <IssueTags tags={issue.tags} />
                                 <p className="text-sm text-muted-foreground">
                                     {issue.action_plan ??
-                                        'No action plan entered'}
+                                        t('No action plan entered')}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
                                     {issue.responsible_person ??
-                                        'No person assigned'}{' '}
-                                    · Target {formatDate(issue.target_date)}
+                                        t('No person assigned')}{' '}
+                                    {t('· Target')}
+                                    {formatDate(issue.target_date)}
                                     {issue.requires_ceo_decision &&
                                         ' · Needs CEO decision'}
                                 </p>
@@ -97,7 +106,7 @@ export function TerminalIssues({
                     <IssueDialog
                         statuses={statuses}
                         fixedTerminal={terminal}
-                        triggerLabel="Add issue / action item"
+                        triggerLabel={t('Add issue / action item')}
                         variant="outline"
                     />
                 </div>

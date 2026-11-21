@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n';
 import { StatusBadge } from '@/components/status-badge';
 import type { ReportStatus } from '@/types';
 
@@ -20,11 +21,11 @@ const tones = {
 export function reportStatusLabel(
     status: ReportStatus | 'not_started',
 ): string {
-    return labels[status];
+    return t(labels[status]);
 }
 
 export function ReportStatusBadge({ status }: { status: ReportStatus | null }) {
     const key = status ?? 'not_started';
 
-    return <StatusBadge label={labels[key]} tone={tones[key]} />;
+    return <StatusBadge label={t(labels[key])} tone={tones[key]} />;
 }

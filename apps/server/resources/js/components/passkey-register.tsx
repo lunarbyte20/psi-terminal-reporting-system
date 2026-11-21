@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { usePasskeyRegister } from '@laravel/passkeys/react';
 import { useState } from 'react';
 import InputError from '@/components/input-error';
@@ -10,6 +11,7 @@ type Props = {
 };
 
 export default function PasskeyRegistration({ onSuccess }: Props) {
+    useLocale();
     const [name, setName] = useState(() => {
         const ua = navigator.userAgent;
 
@@ -59,7 +61,7 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
     if (!isSupported) {
         return (
             <div className="text-sm text-muted-foreground">
-                Passkeys are not supported in this browser.
+                {t('Passkeys are not supported in this browser.')}
             </div>
         );
     }
@@ -68,7 +70,7 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
         return (
             <div className="flex justify-end">
                 <Button variant="outline" onClick={() => setShowForm(true)}>
-                    Add passkey
+                    {t('Add passkey')}
                 </Button>
             </div>
         );
@@ -80,18 +82,18 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
             className="space-y-4 rounded-lg border border-border bg-muted/50 p-4"
         >
             <div className="grid gap-2">
-                <Label htmlFor="passkey-name">Passkey name</Label>
+                <Label htmlFor="passkey-name">{t('Passkey name')}</Label>
                 <Input
                     id="passkey-name"
                     type="text"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="e.g., MacBook Pro, iPhone"
+                    placeholder={t('e.g., MacBook Pro, iPhone')}
                     className="mt-1 block w-full border-foreground/20"
                     autoFocus
                 />
                 <p className="text-xs text-muted-foreground">
-                    A name helps you identify this passkey later.
+                    {t('A name helps you identify this passkey later.')}
                 </p>
             </div>
 
@@ -99,10 +101,10 @@ export default function PasskeyRegistration({ onSuccess }: Props) {
 
             <div className="flex justify-end gap-2">
                 <Button type="button" variant="outline" onClick={handleCancel}>
-                    Cancel
+                    {t('Cancel')}
                 </Button>
                 <Button type="submit" disabled={isLoading || !name.trim()}>
-                    {isLoading ? 'Registering...' : 'Register passkey'}
+                    {isLoading ? t('Registering...') : t('Register passkey')}
                 </Button>
             </div>
         </form>

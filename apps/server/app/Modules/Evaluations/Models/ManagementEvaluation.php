@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string|null $key_concerns
  * @property string|null $evaluation
  * @property list<string> $recommendations
+ * @property array<string, string>|null $sections
  * @property int $prepared_by
  * @property int|null $updated_by
  * @property CarbonImmutable $updated_at
@@ -48,6 +49,6 @@ class ManagementEvaluation extends Model
 
     protected function casts(): array
     {
-        return ['recommendations' => 'array', 'updated_at' => 'immutable_datetime'];
+        return ['recommendations' => 'array', 'sections' => 'array', 'updated_at' => 'immutable_datetime'];
     }
 }

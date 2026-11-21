@@ -21,7 +21,7 @@ class SaveTerminal
     {
         return DB::transaction(function () use ($actor, $terminal, $name, $location, $supervisorId): Terminal {
             if ($supervisorId !== null && ! Supervisor::query()->active()->whereKey($supervisorId)->lockForUpdate()->exists()) {
-                throw ValidationException::withMessages(['supervisor_id' => 'Choose an active supervisor.']);
+                throw ValidationException::withMessages(['supervisor_id' => __('Choose an active supervisor.')]);
             }
 
             $terminal ??= new Terminal;

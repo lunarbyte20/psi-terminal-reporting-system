@@ -246,6 +246,44 @@ class WeeklyReportTest extends TestCase
                 ->where('board.rows.total', 2));
     }
 
+    public function test_encode_form_lists_each_supervisor_with_their_terminals_and_summary_cards(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+        [, $other] = $this->supervisorAccount('Sherome Gameda');
+        $this->terminalFor($other, 'SM Bacoor');
+        $report = $this->startReport();
+        $report->forceFill(['status' => ReportStatus::Approved, 'total_sales' => '750.00'])->save();
+
+        $this->actingAs($admin)->get(route('reports.index', ['week' => $this->week->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('viewAll', true)
+                ->where('supervisors.0.name', 'Wilfredo Permejo')
+                ->where('supervisors.0.terminals.0.name', 'SM Sta. Rosa')
+                ->where('supervisors.1.terminals.0.name', 'SM Bacoor')
+                ->where('board.supervisors.0', ['supervisor_id' => $this->supervisor->id, 'supervisor' => 'Wilfredo Permejo', 'terminals' => 1, 'encoded' => 1, 'approved_sales' => '750.00'])
+                ->where('board.supervisors.1.encoded', 0));
+
+        // A supervisor only gets themselves and their own terminals.
+        $this->actingAs($this->supervisorUser)->get(route('reports.index'))
+            ->assertInertia(fn (Assert $page) => $page->has('supervisors', 1)->has('board.supervisors', 1));
+    }
+
+    public function test_encoding_rejects_a_terminal_that_belongs_to_another_supervisor(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+        [, $other] = $this->supervisorAccount('Sherome Gameda');
+
+        $this->actingAs($admin)->post(route('reports.store'), [
+            'supervisor_id' => $other->id, 'terminal_id' => $this->terminal->id, 'reporting_week_id' => $this->week->id,
+        ])->assertSessionHasErrors('terminal_id');
+        $this->assertDatabaseCount('weekly_reports', 0);
+
+        $this->actingAs($admin)->post(route('reports.store'), [
+            'supervisor_id' => $this->supervisor->id, 'terminal_id' => $this->terminal->id, 'reporting_week_id' => $this->week->id,
+        ])->assertRedirect();
+        $this->assertDatabaseCount('weekly_reports', 1);
+    }
+
     private function startReport(): WeeklyReport
     {
         return WeeklyReport::query()->create([

@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { formatPeso } from '@/lib/format';
 import { ChangeText } from './change-text';
 import type { TerminalResult } from './types';
@@ -12,6 +13,7 @@ export function RankList({
     show: 'sales' | 'change';
     empty: string;
 }) {
+    useLocale();
     if (rows.length === 0) {
         return <p className="py-3 text-sm text-muted-foreground">{empty}</p>;
     }
@@ -34,7 +36,7 @@ export function RankList({
                             {row.terminal}
                         </p>
                         <p className="truncate text-xs text-muted-foreground">
-                            {row.supervisor ?? 'Unassigned'}
+                            {row.supervisor ?? t('Unassigned')}
                             {show === 'change' &&
                                 ` · ${formatPeso(row.previous)} → ${formatPeso(row.current)}`}
                         </p>

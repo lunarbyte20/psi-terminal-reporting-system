@@ -68,7 +68,10 @@ const mediaQuery = (): MediaQueryList | null => {
     return window.matchMedia('(prefers-color-scheme: dark)');
 };
 
-const handleSystemThemeChange = (): void => applyTheme(currentAppearance);
+const handleSystemThemeChange = (): void => {
+    applyTheme(currentAppearance);
+    notify();
+};
 
 export function initializeTheme(): void {
     if (typeof window === 'undefined') {
@@ -98,18 +101,18 @@ export function useAppearance(): UseAppearanceReturn {
         ? 'dark'
         : 'light';
 
-    const updateAppearance = (mode: Appearance): void => {
-        currentAppearance = mode;
-
-        // Store in localStorage for client-side persistence...
-        localStorage.setItem('appearance', mode);
-
-        // Store in cookie for SSR...
-        setCookie('appearance', mode);
-
-        applyTheme(mode);
-        notify();
-    };
-
     return { appearance, resolvedAppearance, updateAppearance } as const;
+}
+
+export function updateAppearance(mode: Appearance): void {
+    currentAppearance = mode;
+
+    // Store in localStorage for client-side persistence...
+    localStorage.setItem('appearance', mode);
+
+    // Store in cookie for SSR...
+    setCookie('appearance', mode);
+
+    applyTheme(mode);
+    notify();
 }

@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n';
 import { router } from '@inertiajs/react';
 import { useEffect } from 'react';
 import { toast } from 'sonner';
@@ -13,7 +14,7 @@ export function useFlashToast(): void {
                 return;
             }
 
-            toast[data.type](data.message);
+            toast[data.type](t(data.message));
         });
     }, []);
 }

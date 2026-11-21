@@ -16,6 +16,7 @@
         "laravel/framework": "^13.17",
         "laravel/tinker": "^3.0",
         "laravel/wayfinder": "^0.1.14",
+        "openspout/openspout": "^5.15",
         "spatie/laravel-activitylog": "^5.1",
         "spatie/laravel-permission": "^8.5"
     },
@@ -67,6 +68,7 @@
             "Composer\\Config::disableProcessTimeout",
             "npm run check",
             "npm run types:check",
+            "npm run test:i18n",
             "@test"
         ],
         "types:check": [
@@ -101,8 +103,7 @@
         "laravel": {
             "dont-discover": [],
             "installer": {
-                "post-create-project": [
-                ]
+                "post-create-project": []
             }
         }
     },

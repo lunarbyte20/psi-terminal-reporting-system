@@ -1,3 +1,4 @@
+import { t } from '@/lib/i18n';
 /**
  * Display helpers. Amounts arrive from the server as exact decimal strings
  * ("1250.50"); they are only formatted here, never summed for storage.
@@ -52,5 +53,5 @@ export function formatDateTime(value: string | null): string {
 
 /** "1 day", "4 days": reporting weeks can be a single day at a month edge. */
 export function formatDays(days: number): string {
-    return `${days} ${days === 1 ? 'day' : 'days'}`;
+    return `${days} ${t(days === 1 ? 'day' : 'days')}`;
 }

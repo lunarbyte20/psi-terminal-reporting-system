@@ -1,5 +1,7 @@
+import { t, useLocale } from '@/lib/i18n';
 import { useMemo, useState } from 'react';
 import { ReportStatusBadge } from '@/components/report-status-badge';
+import { SearchableSelect } from '@/components/searchable-select';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -33,6 +35,7 @@ function sales(row: TerminalResult): number {
  * so sorting and filtering happen in the browser without another request.
  */
 export function TerminalBreakdown({ rows }: { rows: TerminalResult[] }) {
+    useLocale();
     const [sort, setSort] = useState<Sort>('supervisor');
     const [supervisor, setSupervisor] = useState(ALL);
     const [search, setSearch] = useState('');
@@ -40,7 +43,9 @@ export function TerminalBreakdown({ rows }: { rows: TerminalResult[] }) {
     const supervisors = useMemo(
         () =>
             [
-                ...new Set(rows.map((row) => row.supervisor ?? 'Unassigned')),
+                ...new Set(
+                    rows.map((row) => row.supervisor ?? t('Unassigned')),
+                ),
             ].sort(),
         [rows],
     );
@@ -50,7 +55,7 @@ export function TerminalBreakdown({ rows }: { rows: TerminalResult[] }) {
         const filtered = rows.filter(
             (row) =>
                 (supervisor === ALL ||
-                    (row.supervisor ?? 'Unassigned') === supervisor) &&
+                    (row.supervisor ?? t('Unassigned')) === supervisor) &&
                 (term === '' || row.terminal.toLowerCase().includes(term)),
         );
 
@@ -82,7 +87,7 @@ export function TerminalBreakdown({ rows }: { rows: TerminalResult[] }) {
             <div className="flex flex-wrap items-end gap-3 print:hidden">
                 <div className="min-w-44 flex-1 space-y-1.5">
                     <Label htmlFor="breakdown-search" className="text-xs">
-                        Search terminal
+                        {t('Search terminal')}
                     </Label>
                     <Input
                         id="breakdown-search"
@@ -93,28 +98,25 @@ export function TerminalBreakdown({ rows }: { rows: TerminalResult[] }) {
                 </div>
                 <div className="min-w-44 space-y-1.5">
                     <Label htmlFor="breakdown-supervisor" className="text-xs">
-                        Supervisor
+                        {t('Supervisor')}
                     </Label>
-                    <Select value={supervisor} onValueChange={setSupervisor}>
-                        <SelectTrigger
-                            id="breakdown-supervisor"
-                            className="w-full"
-                        >
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value={ALL}>All supervisors</SelectItem>
-                            {supervisors.map((name) => (
-                                <SelectItem key={name} value={name}>
-                                    {name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                    <SearchableSelect
+                        id="breakdown-supervisor"
+                        value={supervisor}
+                        onChange={setSupervisor}
+                        options={[
+                            { value: ALL, label: t('All supervisors') },
+                            ...supervisors.map((name) => ({
+                                value: name,
+                                label: name,
+                            })),
+                        ]}
+                        searchPlaceholder="Search supervisors"
+                    />
                 </div>
                 <div className="min-w-44 space-y-1.5">
                     <Label htmlFor="breakdown-sort" className="text-xs">
-                        Sort by
+                        {t('Sort by')}
                     </Label>
                     <Select
                         value={sort}
@@ -129,7 +131,7 @@ export function TerminalBreakdown({ rows }: { rows: TerminalResult[] }) {
                                     key={option.value}
                                     value={option.value}
                                 >
-                                    {option.label}
+                                    {t(option.label)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -137,30 +139,76 @@ export function TerminalBreakdown({ rows }: { rows: TerminalResult[] }) {
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Phones: one card per terminal instead of an eight-column table. */}
+            <ul className="space-y-2 sm:hidden print:hidden">
+                {visible.map((row) => (
+                    <li key={row.terminal_id} className="rounded-lg border p-3">
+                        <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold">
+                                    {row.rank !== null && (
+                                        <span className="mr-1.5 text-primary">
+                                            #{row.rank}
+                                        </span>
+                                    )}
+                                    {row.terminal}
+                                </p>
+                                <p className="truncate text-xs text-muted-foreground">
+                                    {row.supervisor ?? t('Unassigned')}
+                                </p>
+                            </div>
+                            <ReportStatusBadge status={row.status} />
+                        </div>
+                        <div className="mt-2 flex items-end justify-between gap-2 text-xs">
+                            <div>
+                                <p className="text-sm font-semibold tabular-nums">
+                                    {formatPeso(row.current)}
+                                </p>
+                                <p className="text-muted-foreground">
+                                    {t('prev')}
+                                    {formatPeso(row.previous)}
+                                </p>
+                            </div>
+                            {row.counted && (
+                                <ChangeText
+                                    direction={row.direction}
+                                    variance={row.variance}
+                                    percent={row.percent_change}
+                                />
+                            )}
+                        </div>
+                    </li>
+                ))}
+            </ul>
+
+            <div className="hidden overflow-x-auto sm:block print:block!">
                 <table className="w-full text-xs whitespace-nowrap">
                     <thead className="bg-[#fafaff] text-[9px] tracking-wider text-muted-foreground uppercase dark:bg-muted">
                         <tr>
-                            <th className="px-2.5 py-2.5 text-left">Rank</th>
                             <th className="px-2.5 py-2.5 text-left">
-                                Terminal
+                                {t('Rank')}
                             </th>
                             <th className="px-2.5 py-2.5 text-left">
-                                Supervisor
+                                {t('Terminal')}
+                            </th>
+                            <th className="px-2.5 py-2.5 text-left">
+                                {t('Supervisor')}
                             </th>
                             <th className="px-2.5 py-2.5 text-right">
-                                Current sales
+                                {t('Current sales')}
                             </th>
                             <th className="px-2.5 py-2.5 text-right">
-                                Previous sales
+                                {t('Previous sales')}
                             </th>
                             <th className="px-2.5 py-2.5 text-right">
-                                Variance
+                                {t('Variance')}
                             </th>
                             <th className="px-2.5 py-2.5 text-right">
-                                % change
+                                {t('% change')}
                             </th>
-                            <th className="px-2.5 py-2.5 text-left">Report</th>
+                            <th className="px-2.5 py-2.5 text-left">
+                                {t('Report')}
+                            </th>
                         </tr>
                     </thead>
                     <tbody>
@@ -176,7 +224,7 @@ export function TerminalBreakdown({ rows }: { rows: TerminalResult[] }) {
                                     {row.terminal}
                                 </td>
                                 <td className="px-2.5 py-2.5">
-                                    {row.supervisor ?? 'Unassigned'}
+                                    {row.supervisor ?? t('Unassigned')}
                                 </td>
                                 <td className="px-2.5 py-2.5 text-right tabular-nums">
                                     {formatPeso(row.current)}
@@ -215,12 +263,12 @@ export function TerminalBreakdown({ rows }: { rows: TerminalResult[] }) {
                         ))}
                     </tbody>
                 </table>
-                {visible.length === 0 && (
-                    <p className="py-4 text-sm text-muted-foreground">
-                        No terminals match this search.
-                    </p>
-                )}
             </div>
+            {visible.length === 0 && (
+                <p className="py-4 text-sm text-muted-foreground">
+                    {t('No terminals match this search.')}
+                </p>
+            )}
         </div>
     );
 }

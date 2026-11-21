@@ -25,22 +25,22 @@ class VehicleTypeController extends Controller
             'filters' => $filters,
             'vehicleTypes' => ArchiveFilter::apply(VehicleType::query(), $filters['status'], $filters['q'])
                 ->ordered()->orderBy('id')
-                ->paginate(50, ['id', 'name', 'sort_order', 'archived_at'])->withQueryString(),
+                ->paginate(50, ['id', 'name', 'number_of_passengers', 'archived_at'])->withQueryString(),
         ]);
     }
 
     public function store(SaveVehicleTypeRequest $request, SaveVehicleType $action): RedirectResponse
     {
-        $action->execute($request->user(), null, $request->string('name')->toString(), $request->integer('sort_order'));
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Vehicle type added.']);
+        $action->execute($request->user(), null, $request->string('name')->toString(), $request->integer('number_of_passengers'));
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Vehicle type added.')]);
 
         return back();
     }
 
     public function update(SaveVehicleTypeRequest $request, VehicleType $vehicleType, SaveVehicleType $action): RedirectResponse
     {
-        $action->execute($request->user(), $vehicleType, $request->string('name')->toString(), $request->integer('sort_order'));
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Vehicle type changes saved.']);
+        $action->execute($request->user(), $vehicleType, $request->string('name')->toString(), $request->integer('number_of_passengers'));
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Vehicle type changes saved.')]);
 
         return back();
     }

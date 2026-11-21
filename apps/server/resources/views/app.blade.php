@@ -8,6 +8,7 @@
         <script>
             (function() {
                 const appearance = '{{ $appearance ?? "light" }}';
+                localStorage.setItem('appearance', appearance);
 
                 if (appearance === 'system') {
                     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -21,8 +22,9 @@
 
         {{-- Inline style to set the HTML background color based on our theme in app.css --}}
         <style>
+            /* Same as --background in app.css, so long pages never show a white band below the content. */
             html {
-                background-color: oklch(1 0 0);
+                background-color: #f5f6fb;
             }
 
             html.dark {

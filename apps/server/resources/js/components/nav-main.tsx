@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Link } from '@inertiajs/react';
 import {
     SidebarGroup,
@@ -16,24 +17,26 @@ export function NavMain({
     items: NavItem[];
     label?: string;
 }) {
-    const { isCurrentUrl } = useCurrentUrl();
+    useLocale();
+    // Stays highlighted on a section's detail and edit pages, e.g. /reports/5/edit.
+    const { isCurrentOrParentUrl } = useCurrentUrl();
 
     return (
         <SidebarGroup className="px-2 py-0">
             <SidebarGroupLabel className="tracking-wider text-sidebar-foreground/60 uppercase">
-                {label}
+                {t(label)}
             </SidebarGroupLabel>
             <SidebarMenu>
                 {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton
                             asChild
-                            isActive={isCurrentUrl(item.href)}
+                            isActive={isCurrentOrParentUrl(item.href)}
                             tooltip={{ children: item.title }}
                         >
                             <Link href={item.href} prefetch>
                                 {item.icon && <item.icon />}
-                                <span>{item.title}</span>
+                                <span>{t(item.title)}</span>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>

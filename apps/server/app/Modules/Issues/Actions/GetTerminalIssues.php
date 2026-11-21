@@ -18,7 +18,7 @@ class GetTerminalIssues
         return array_values(OperationalIssue::query()
             ->open()
             ->where('terminal_id', $terminalId)
-            ->with(['terminal:id,name', 'supervisor:id,name', 'reportingWeek'])
+            ->with(['tags', 'terminal:id,name', 'supervisor:id,name', 'reportingWeek'])
             ->orderByRaw('target_date is null')
             ->orderBy('target_date')
             ->orderByDesc('id')

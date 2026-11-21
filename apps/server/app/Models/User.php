@@ -19,6 +19,8 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 use Spatie\Permission\Traits\HasRoles;
 
 /**
+ * @property string $locale
+ * @property string|null $theme
  * @property int $id
  * @property string $name
  * @property string $email

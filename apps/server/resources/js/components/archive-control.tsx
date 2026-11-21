@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Form } from '@inertiajs/react';
 import { Archive, ArchiveRestore } from 'lucide-react';
 import { useState } from 'react';
@@ -32,8 +33,9 @@ export function ArchiveControl({
     consequence: string;
     variant?: 'icon' | 'button';
 }) {
+    useLocale();
     const [open, setOpen] = useState(false);
-    const verb = archived ? 'Restore' : 'Archive';
+    const verb = archived ? t('Restore') : t('Archive');
     const trigger = (
         <Button type="button" variant={archived ? 'restore' : 'remove'}>
             {archived ? (
@@ -57,7 +59,7 @@ export function ArchiveControl({
                     )}
                 />
             ) : (
-                <DialogTrigger asChild>{trigger}</DialogTrigger>
+                <DialogTrigger asChild>{t(trigger)}</DialogTrigger>
             )}
             <DialogContent>
                 <DialogHeader>
@@ -66,7 +68,9 @@ export function ArchiveControl({
                     </DialogTitle>
                     <DialogDescription>
                         {archived
-                            ? 'It will be available again for new reports and choices.'
+                            ? t(
+                                  'It will be available again for new reports and choices.',
+                              )
                             : consequence}
                     </DialogDescription>
                 </DialogHeader>
@@ -98,7 +102,7 @@ export function ArchiveControl({
                                         variant="outline"
                                         disabled={processing}
                                     >
-                                        Cancel
+                                        {t('Cancel')}
                                     </Button>
                                 </DialogClose>
                                 <Button

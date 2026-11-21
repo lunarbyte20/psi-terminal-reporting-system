@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Eye } from 'lucide-react';
 import { PageLinks } from '@/components/page-links';
 import { RowAction } from '@/components/row-action';
@@ -32,10 +33,11 @@ export function AssignedRecords({
     records: Paginated<AssignedRecord>;
     baseUrl: string;
 }) {
+    useLocale();
     return (
         <section className="space-y-4 rounded-lg border bg-card p-5 sm:p-6">
             <h2 className="text-lg font-semibold">
-                {title} ({records.total})
+                {t(title)} ({records.total})
             </h2>
             {records.data.length ? (
                 <div className="rounded-lg border">
@@ -43,8 +45,8 @@ export function AssignedRecords({
                         <TableHeader>
                             <TableRow>
                                 <TableHead>{recordLabel}</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>ACTION</TableHead>
+                                <TableHead>{t('Status')}</TableHead>
+                                <TableHead>{t('ACTION')}</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -64,8 +66,8 @@ export function AssignedRecords({
                                         <StatusBadge
                                             label={
                                                 record.is_active
-                                                    ? 'Active'
-                                                    : 'Inactive'
+                                                    ? t('Active')
+                                                    : t('Inactive')
                                             }
                                             tone={
                                                 record.is_active
@@ -79,7 +81,9 @@ export function AssignedRecords({
                                             href={`${baseUrl}/${record.id}`}
                                             icon={Eye}
                                             tone="view"
-                                            label={`View ${record.name}`}
+                                            label={t('View :0', {
+                                                '0': record.name,
+                                            })}
                                         />
                                     </TableCell>
                                 </TableRow>
@@ -90,7 +94,7 @@ export function AssignedRecords({
             ) : (
                 <p className="text-sm text-muted-foreground">
                     {records.total > 0
-                        ? 'No records on this page. Choose a previous page.'
+                        ? t('No records on this page. Choose a previous page.')
                         : emptyMessage}
                 </p>
             )}

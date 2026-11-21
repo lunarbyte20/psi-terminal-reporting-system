@@ -1,4 +1,6 @@
 export type User = {
+    locale: 'en' | 'fil';
+    theme: 'light' | 'dark' | 'system' | null;
     id: number;
     name: string;
     email: string;
@@ -21,6 +23,8 @@ export type Auth = {
 };
 
 export type Passkey = {
+    locale: 'en' | 'fil';
+    theme: 'light' | 'dark' | 'system' | null;
     id: number;
     name: string;
     authenticator: string | null;

@@ -18,7 +18,7 @@ class SetAccountStatus
     public function execute(User $actor, User $user, bool $active): void
     {
         if ($user->is($actor)) {
-            throw ValidationException::withMessages(['status' => 'You cannot deactivate your own account.']);
+            throw ValidationException::withMessages(['status' => __('You cannot deactivate your own account.')]);
         }
 
         DB::transaction(function () use ($actor, $user, $active): void {

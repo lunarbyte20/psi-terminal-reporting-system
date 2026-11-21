@@ -4,6 +4,7 @@ namespace App\Modules\Evaluations\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Evaluations\Actions\SaveManagementEvaluation;
+use App\Modules\Evaluations\Enums\EvaluationSection;
 use App\Modules\Evaluations\Http\Requests\SaveManagementEvaluationRequest;
 use App\Modules\Evaluations\Models\ManagementEvaluation;
 use App\Modules\Reporting\Models\ReportingWeek;
@@ -34,17 +35,26 @@ class ManagementEvaluationController extends Controller
                 'key_concerns' => $record->key_concerns,
                 'evaluation' => $record->evaluation,
                 'recommendations' => $record->recommendations,
+                'sections' => $record->sections ?? [],
                 'prepared_by' => $record->preparer->name,
                 'updated_by' => $record->editor?->name,
                 'updated_at' => $record->updated_at->toIso8601String(),
             ],
+            'sectionOptions' => EvaluationSection::options(),
             'canEdit' => Gate::allows('administer'),
         ]);
     }
 
     public function update(SaveManagementEvaluationRequest $request, ReportingWeek $week, SaveManagementEvaluation $action): RedirectResponse
     {
-        $action->execute($request->user(), $week, $request->text('key_concerns'), $request->text('evaluation'), $request->recommendations());
+        $action->execute(
+            $request->user(),
+            $week,
+            $request->text('key_concerns'),
+            $request->text('evaluation'),
+            $request->recommendations(),
+            $request->sections(),
+        );
         $count = count(array_filter($request->recommendations(), fn (string $item) => trim($item) !== ''));
         Inertia::flash('toast', ['type' => 'success', 'message' => "Evaluation saved with {$count} management recommendations."]);
 

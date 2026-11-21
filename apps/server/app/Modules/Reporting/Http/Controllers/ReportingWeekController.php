@@ -4,8 +4,8 @@ namespace App\Modules\Reporting\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Reporting\Actions\GenerateReportingWeeks;
+use App\Modules\Reporting\Actions\GetReportingWeekOverview;
 use App\Modules\Reporting\Http\Requests\GenerateReportingWeeksRequest;
-use App\Modules\Reporting\Models\ReportingWeek;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
@@ -14,20 +14,12 @@ use Inertia\Response;
 
 class ReportingWeekController extends Controller
 {
-    public function index(): Response
+    public function index(GetReportingWeekOverview $overview): Response
     {
         Gate::authorize('administer');
 
         return Inertia::render('admin/reporting-weeks/index', [
-            'weeks' => ReportingWeek::query()
-                ->withCount(['reports', 'reports as approved_count' => fn ($query) => $query->where('status', 'approved')])
-                ->orderByDesc('starts_on')
-                ->paginate(30)->withQueryString()
-                ->through(fn (ReportingWeek $week) => [
-                    ...$week->summary(),
-                    'reports_count' => (int) $week->getAttribute('reports_count'),
-                    'approved_count' => (int) $week->getAttribute('approved_count'),
-                ]),
+            ...$overview->execute(),
             'defaultMonth' => today()->format('Y-m'),
         ]);
     }

@@ -23,7 +23,7 @@ class StartWeeklyReport
     public function execute(User $actor, Terminal $terminal, ReportingWeek $week): WeeklyReport
     {
         if ($week->starts_on->isFuture()) {
-            throw ValidationException::withMessages(['week' => 'This week has not started yet.']);
+            throw ValidationException::withMessages(['week' => __('This week has not started yet.')]);
         }
 
         $existing = WeeklyReport::query()->where('terminal_id', $terminal->id)->where('reporting_week_id', $week->id)->first();

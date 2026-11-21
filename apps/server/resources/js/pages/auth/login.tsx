@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Form, Head } from '@inertiajs/react';
 import InputError from '@/components/input-error';
 import PasswordInput from '@/components/password-input';
@@ -12,9 +13,10 @@ import { request } from '@/routes/password';
 type Props = { status?: string; canResetPassword: boolean };
 
 export default function Login({ status, canResetPassword }: Props) {
+    useLocale();
     return (
         <>
-            <Head title="Sign in" />
+            <Head title={t('Sign in')} />
             <Form
                 {...store.form()}
                 resetOnSuccess={['password']}
@@ -23,7 +25,7 @@ export default function Login({ status, canResetPassword }: Props) {
                 {({ processing, errors }) => (
                     <>
                         <div className="grid gap-2">
-                            <Label htmlFor="email">Email address</Label>
+                            <Label htmlFor="email">{t('Email address')}</Label>
                             <Input
                                 id="email"
                                 type="email"
@@ -36,10 +38,12 @@ export default function Login({ status, canResetPassword }: Props) {
                         </div>
                         <div className="grid gap-2">
                             <div className="flex items-center justify-between">
-                                <Label htmlFor="password">Password</Label>
+                                <Label htmlFor="password">
+                                    {t('Password')}
+                                </Label>
                                 {canResetPassword && (
                                     <TextLink href={request()}>
-                                        Forgot password?
+                                        {t('Forgot password?')}
                                     </TextLink>
                                 )}
                             </div>
@@ -52,7 +56,7 @@ export default function Login({ status, canResetPassword }: Props) {
                             <InputError message={errors.password} />
                         </div>
                         <Button type="submit" disabled={processing}>
-                            {processing && <Spinner />} Sign in
+                            {processing && <Spinner />} {t('Sign in')}
                         </Button>
                     </>
                 )}

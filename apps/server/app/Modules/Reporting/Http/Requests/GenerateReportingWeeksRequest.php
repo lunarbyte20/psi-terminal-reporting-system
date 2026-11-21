@@ -21,6 +21,6 @@ class GenerateReportingWeeksRequest extends FormRequest
     /** @return array<string, string> */
     public function messages(): array
     {
-        return ['month.before_or_equal' => 'Choose a month within the next 12 months.'];
+        return ['month.before_or_equal' => __('Choose a month within the next 12 months.')];
     }
 }

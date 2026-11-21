@@ -9,12 +9,13 @@ use Illuminate\Database\Eloquent\Model;
 /**
  * @property int $id
  * @property string $name
+ * @property int|null $number_of_passengers
  * @property int $sort_order
  * @property CarbonImmutable|null $archived_at
  */
 class VehicleType extends Model
 {
-    protected $fillable = ['name', 'sort_order'];
+    protected $fillable = ['name', 'sort_order', 'number_of_passengers'];
 
     /** @param Builder<self> $query */
     public function scopeActive(Builder $query): void
@@ -30,6 +31,6 @@ class VehicleType extends Model
 
     protected function casts(): array
     {
-        return ['archived_at' => 'datetime', 'sort_order' => 'integer'];
+        return ['archived_at' => 'datetime', 'sort_order' => 'integer', 'number_of_passengers' => 'integer'];
     }
 }

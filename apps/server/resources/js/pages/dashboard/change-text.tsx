@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { formatPercent, formatPeso } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { Direction } from './types';
@@ -23,22 +24,28 @@ export function ChangeText({
     show?: 'peso' | 'percent' | 'both';
     className?: string;
 }) {
+    useLocale();
     if (direction === 'none') {
-        return <span className={cn(tones.none, className)}>No comparison</span>;
+        return (
+            <span className={cn(tones.none, className)}>
+                {t('No comparison')}
+            </span>
+        );
     }
 
     const arrow = direction === 'up' ? '▲' : direction === 'down' ? '▼' : '■';
-    const percentText = percent === null ? 'from ₱0' : formatPercent(percent);
+    const percentText =
+        percent === null ? t('from ₱0') : formatPercent(percent);
 
     return (
         <span className={cn('tabular-nums', tones[direction], className)}>
             <span aria-hidden="true">{arrow} </span>
             <span className="sr-only">
                 {direction === 'up'
-                    ? 'Up'
+                    ? t('Up')
                     : direction === 'down'
-                      ? 'Down'
-                      : 'No change'}{' '}
+                      ? t('Down')
+                      : t('No change')}{' '}
             </span>
             {show !== 'percent' && formatPeso(variance)}
             {show === 'both' && ' · '}

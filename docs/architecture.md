@@ -48,3 +48,24 @@ Work per page is bounded by the number of terminals (31 today, hundreds at most)
 ## Quality gates
 
 Follow `docs/quality-gate.md`. `composer ci:check` must pass, and changed screens are reviewed in the running app at desktop and phone widths.
+
+## Tags and user preferences
+
+The Issues module owns `issue_tags` and the indexed many-to-many pivot to
+`operational_issues`. `GetIssueList` supplies the same scoped, filtered query to
+the paginated UI and chunked CSV/XLSX exports. Tag writes lock records and use
+`RecordChange`; issue audit snapshots include tag IDs. Reporting reads tags
+through `GetIssueSnapshot` and `GetTerminalIssues`, never the tag tables directly.
+
+Accounts owns a rate-limited preferences endpoint restricted to the current
+account. `SetUserLocale` selects Laravel's request locale; `HandleAppearance`
+uses the account theme before falling back to the guest cookie. Shared Inertia
+props expose locale and bounded tag metadata. The frontend uses explicit `t()`
+calls, a Filipino JSON catalog, and `useLocale()` subscriptions. Changing the
+locale updates text without remounting the page. Laravel uses the same catalog
+for shared feedback, with separate Filipino validation/auth/password messages.
+`npm run test:i18n` checks translations and server/client catalog parity in CI.
+
+`vehicle_types.number_of_passengers` is nullable for pre-existing types until an
+Admin sets a default. It is used only when a ridership line has not been saved.
+The internal `sort_order` and historical ridership columns are retained.

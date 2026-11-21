@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { StatusBadge } from '@/components/status-badge';
 import type { IssueStatus } from '@/types';
 
@@ -7,6 +8,10 @@ const labels: Record<IssueStatus, string> = {
     completed: 'Completed',
     on_hold: 'On Hold',
 };
+
+export function issueStatusLabel(status: IssueStatus): string {
+    return t(labels[status]);
+}
 
 const tones = {
     pending: 'warning',
@@ -23,10 +28,11 @@ export function IssueStatusBadge({
     status: IssueStatus;
     overdue?: boolean;
 }) {
+    useLocale();
     return (
         <span className="inline-flex flex-wrap gap-1">
-            <StatusBadge label={labels[status]} tone={tones[status]} />
-            {overdue && <StatusBadge label="Overdue" tone="danger" />}
+            <StatusBadge label={t(labels[status])} tone={tones[status]} />
+            {overdue && <StatusBadge label={t('Overdue')} tone="danger" />}
         </span>
     );
 }

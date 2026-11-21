@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Head, Link } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
 import { Pencil, Plus } from 'lucide-react';
@@ -30,6 +31,7 @@ export default function UserAccounts({
     roles: Option[];
     users: Paginated<AccountRow>;
 }) {
+    useLocale();
     const filtered =
         filters.q !== '' ||
         filters.role !== 'all' ||
@@ -38,7 +40,7 @@ export default function UserAccounts({
     const columns: ColumnDef<AccountRow>[] = [
         {
             accessorKey: 'name',
-            header: 'Name',
+            header: t('Name'),
             cell: ({ row }) => (
                 <div>
                     <p className="font-medium">{row.original.name}</p>
@@ -50,10 +52,10 @@ export default function UserAccounts({
         },
         {
             id: 'role',
-            header: 'Role',
+            header: t('Role'),
             cell: ({ row }) => (
                 <div>
-                    <p>{row.original.role ?? 'No role'}</p>
+                    <p>{row.original.role ?? t('No role')}</p>
                     {row.original.supervisor && (
                         <p className="text-xs text-muted-foreground">
                             {row.original.supervisor}
@@ -64,28 +66,28 @@ export default function UserAccounts({
         },
         {
             id: 'status',
-            header: 'Status',
+            header: t('Status'),
             cell: ({ row }) =>
                 !row.original.active ? (
-                    <StatusBadge label="Deactivated" tone="neutral" />
+                    <StatusBadge label={t('Deactivated')} tone="neutral" />
                 ) : row.original.awaiting_first_sign_in ? (
                     <StatusBadge
-                        label="Waiting for first sign-in"
+                        label={t('Waiting for first sign-in')}
                         tone="warning"
                     />
                 ) : (
-                    <StatusBadge label="Active" tone="success" />
+                    <StatusBadge label={t('Active')} tone="success" />
                 ),
         },
         {
             id: 'actions',
-            header: 'ACTION',
+            header: t('ACTION'),
             cell: ({ row }) => (
                 <RowAction
                     href={`/admin/users/${row.original.id}/edit`}
                     icon={Pencil}
                     tone="edit"
-                    label={`Edit ${row.original.name}`}
+                    label={t('Edit :0', { '0': row.original.name })}
                 />
             ),
         },
@@ -95,19 +97,21 @@ export default function UserAccounts({
         <Button asChild>
             <Link href="/admin/users/create">
                 <Plus aria-hidden="true" />
-                Add account
+                {t('Add account')}
             </Link>
         </Button>
     );
 
     return (
         <>
-            <Head title="User accounts" />
+            <Head title={t('User accounts')} />
             <main className="grid w-full grid-cols-1 gap-6 p-6">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                     <Heading
-                        title="User accounts"
-                        description="Who can sign in and what each person can do."
+                        title={t('User accounts')}
+                        description={t(
+                            'Who can sign in and what each person can do.',
+                        )}
                     />
                     <div className="ml-auto flex items-center gap-2">
                         <RefreshButton only={['users']} />
@@ -116,52 +120,64 @@ export default function UserAccounts({
                 </div>
 
                 <RequirementGuide
-                    title="Accounts guide"
-                    summary="Accounts are created here only; nobody can register themselves."
+                    title={t('Accounts guide')}
+                    summary={t(
+                        'Accounts are created here only; nobody can register themselves.',
+                    )}
                     items={[
                         {
-                            label: 'Admin',
-                            detail: 'Manages accounts, terminals, supervisors and approves reports.',
+                            label: t('Admin'),
+                            detail: t(
+                                'Manages accounts, terminals, supervisors and approves reports.',
+                            ),
                         },
                         {
-                            label: 'CEO, General Manager, COO',
-                            detail: 'See every terminal and report but cannot change figures.',
+                            label: t('CEO, General Manager, COO'),
+                            detail: t(
+                                'See every terminal and report but cannot change figures.',
+                            ),
                         },
                         {
-                            label: 'Supervisor',
-                            detail: 'Encodes reports for their assigned terminals only. Link the account to their supervisor record.',
+                            label: t('Supervisor'),
+                            detail: t(
+                                'Encodes reports for their assigned terminals only. Link the account to their supervisor record.',
+                            ),
                         },
                         {
-                            label: 'Temporary password',
-                            detail: 'Shown once after creating or resetting an account. The person must change it at first sign-in.',
+                            label: t('Temporary password'),
+                            detail: t(
+                                'Shown once after creating or resetting an account. The person must change it at first sign-in.',
+                            ),
                         },
                     ]}
-                    nextStep="Use Add account, then share the one-time password privately."
+                    nextStep={t(
+                        'Use Add account, then share the one-time password privately.',
+                    )}
                 />
 
                 <ListFilters
                     action="/admin/users"
-                    searchLabel="Search by name or email"
+                    searchLabel={t('Search by name or email')}
                     search={filters.q}
                     filtered={filtered}
                     selects={[
                         {
                             name: 'role',
-                            label: 'Role',
+                            label: t('Role'),
                             value: filters.role,
                             options: [
-                                { value: 'all', label: 'All roles' },
+                                { value: 'all', label: t('All roles') },
                                 ...roles,
                             ],
                         },
                         {
                             name: 'status',
-                            label: 'Status',
+                            label: t('Status'),
                             value: filters.status,
                             options: [
-                                { value: 'active', label: 'Active' },
-                                { value: 'inactive', label: 'Deactivated' },
-                                { value: 'all', label: 'All' },
+                                { value: 'active', label: t('Active') },
+                                { value: 'inactive', label: t('Deactivated') },
+                                { value: 'all', label: t('All') },
                             ],
                         },
                     ]}
@@ -170,10 +186,12 @@ export default function UserAccounts({
                 <DataTable
                     columns={columns}
                     page={users}
-                    noun="accounts"
+                    noun={t('accounts')}
                     filtered={filtered}
-                    emptyTitle="No accounts yet"
-                    emptyDetail="Add accounts for management and each supervisor."
+                    emptyTitle={t('No accounts yet')}
+                    emptyDetail={t(
+                        'Add accounts for management and each supervisor.',
+                    )}
                     emptyAction={addButton}
                 />
             </main>

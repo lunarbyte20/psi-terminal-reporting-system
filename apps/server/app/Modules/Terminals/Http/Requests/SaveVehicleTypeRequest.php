@@ -21,13 +21,13 @@ class SaveVehicleTypeRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:60', Rule::unique('vehicle_types', 'name')->ignore($vehicleType instanceof VehicleType ? $vehicleType->id : null)],
-            'sort_order' => ['required', 'integer', 'min:0', 'max:999'],
+            'number_of_passengers' => ['required', 'integer', 'min:0', 'max:500'],
         ];
     }
 
     /** @return array<string, string> */
     public function messages(): array
     {
-        return ['name.unique' => 'This vehicle type already exists.'];
+        return ['name.unique' => __('This vehicle type already exists.')];
     }
 }

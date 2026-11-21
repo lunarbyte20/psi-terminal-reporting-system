@@ -4,32 +4,33 @@ namespace App\Modules\Reporting\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use App\Modules\Reporting\Actions\GetExecutiveDashboard;
-use App\Modules\Reporting\Models\ReportingWeek;
+use App\Modules\Reporting\Actions\ResolveReportPeriod;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 /**
- * Downloads the dashboard's terminal sales breakdown for one week as a CSV
- * that opens directly in Excel. Figures come from the same Action as the
- * dashboard, so the file always matches the screen.
+ * Downloads the dashboard's terminal sales breakdown for a week or a month as
+ * a CSV that opens directly in Excel. Figures come from the same Action as
+ * the dashboard, so the file always matches the screen.
  */
 class ExportTerminalSalesController extends Controller
 {
-    public function __invoke(Request $request, ReportingWeek $week, GetExecutiveDashboard $dashboard): StreamedResponse
+    public function __invoke(Request $request, string $period, ResolveReportPeriod $resolve, GetExecutiveDashboard $dashboard): StreamedResponse
     {
-        abort_if($week->starts_on->isFuture(), 404);
-        $data = $dashboard->execute($request->user(), $week);
-        $filename = 'psi-terminal-sales-'.$week->starts_on->toDateString().'.csv';
+        $resolved = $resolve->execute($period);
+        $data = $dashboard->executeForPeriod($request->user(), $resolved);
+        $filename = 'psi-terminal-sales-'.$resolved->fileStamp.'.csv';
+        $previous = $resolved->isMonth() ? 'Previous month' : 'Previous sales';
 
-        return response()->streamDownload(function () use ($data, $week): void {
+        return response()->streamDownload(function () use ($data, $resolved, $previous): void {
             $out = fopen('php://output', 'w');
             if ($out === false) {
                 return;
             }
             // Excel needs the UTF-8 byte order mark to show ₱ and ñ correctly.
             fwrite($out, "\xEF\xBB\xBF");
-            fputcsv($out, ['PSI Terminal Sales Breakdown', 'Week of '.$week->label(), 'Generated '.now()->setTimezone((string) config('app.display_timezone'))->format('Y-m-d H:i'), 'Approved reports only']);
-            fputcsv($out, ['Rank', 'Terminal', 'Supervisor', 'Report status', 'Current sales', 'Previous sales', 'Variance', '% change']);
+            fputcsv($out, ['PSI Terminal Sales Breakdown', $resolved->title, 'Generated '.now()->setTimezone((string) config('app.display_timezone'))->format('Y-m-d H:i'), 'Approved reports only']);
+            fputcsv($out, ['Rank', 'Terminal', 'Supervisor', 'Report status', 'Current sales', $previous, 'Variance', '% change']);
 
             foreach ($data['terminals'] as $row) {
                 fputcsv($out, [

@@ -16,15 +16,15 @@ const buttonVariants = cva(
         outline:
           "border border-slate-500 bg-slate-100 text-slate-900 shadow-xs hover:bg-slate-200 dark:border-slate-400 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700",
         view:
-          "border border-blue-600 bg-blue-50 text-blue-800 hover:bg-blue-100 dark:border-blue-400 dark:bg-blue-950 dark:text-blue-200 dark:hover:bg-blue-900",
+          "border border-blue-600 bg-blue-50 text-blue-800 hover:bg-blue-100 dark:border-blue-200/40 dark:bg-blue-200/10 dark:text-blue-200 dark:hover:bg-blue-200/15",
         edit:
-          "border border-amber-700 bg-amber-100 text-amber-950 hover:bg-amber-200 dark:border-amber-400 dark:bg-amber-950 dark:text-amber-200 dark:hover:bg-amber-900",
+          "border border-amber-700 bg-amber-100 text-amber-950 hover:bg-amber-200 dark:border-amber-200/40 dark:bg-amber-200/10 dark:text-amber-200 dark:hover:bg-amber-200/15",
         manage:
-          "border border-violet-700 bg-violet-50 text-violet-900 hover:bg-violet-100 dark:border-violet-400 dark:bg-violet-950 dark:text-violet-200 dark:hover:bg-violet-900",
+          "border border-violet-700 bg-violet-50 text-violet-900 hover:bg-violet-100 dark:border-violet-200/40 dark:bg-violet-200/10 dark:text-violet-200 dark:hover:bg-violet-200/15",
         remove:
-          "border border-red-600 bg-red-50 text-red-800 hover:bg-red-100 dark:border-red-400 dark:bg-red-950 dark:text-red-200 dark:hover:bg-red-900",
+          "border border-red-600 bg-red-50 text-red-800 hover:bg-red-100 dark:border-red-200/40 dark:bg-red-200/10 dark:text-red-200 dark:hover:bg-red-200/15",
         restore:
-          "border border-green-700 bg-green-50 text-green-900 hover:bg-green-100 dark:border-green-400 dark:bg-green-950 dark:text-green-200 dark:hover:bg-green-900",
+          "border border-green-700 bg-green-50 text-green-900 hover:bg-green-100 dark:border-green-200/40 dark:bg-green-200/10 dark:text-green-200 dark:hover:bg-green-200/15",
         secondary:
           "bg-secondary text-secondary-foreground shadow-xs hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",

@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { FormSection, fieldAria } from '@/components/form-field';
 import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
@@ -17,10 +18,13 @@ export function SalesSection({
     errors: Record<string, string | undefined>;
     onChange: (key: string, value: string) => void;
 }) {
+    useLocale();
     return (
         <FormSection
-            title="Sales"
-            description="Peso amounts for the week. Leave a field empty if there was none. Monthly fee and weekly fee are separate."
+            title={t('Sales')}
+            description={t(
+                'Peso amounts for the week. Leave a field empty if there was none. Monthly fee and weekly fee are separate.',
+            )}
         >
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {categories.map((category) => {
@@ -29,11 +33,11 @@ export function SalesSection({
                         errors[`sales.${category.key}`] ??
                         (isValidAmount(values[category.key] ?? '')
                             ? undefined
-                            : 'Enter an amount like 1250 or 1250.50.');
+                            : t('Enter an amount like 1250 or 1250.50.'));
 
                     return (
                         <div key={category.key} className="space-y-2">
-                            <Label htmlFor={id}>{category.label}</Label>
+                            <Label htmlFor={id}>{t(category.label)}</Label>
                             <div className="relative">
                                 <span
                                     aria-hidden="true"
@@ -45,7 +49,7 @@ export function SalesSection({
                                     {...fieldAria(id, { error })}
                                     inputMode="decimal"
                                     autoComplete="off"
-                                    placeholder="0.00"
+                                    placeholder={t('0.00')}
                                     className="h-11 pl-7 text-right text-base tabular-nums sm:h-9 sm:text-sm"
                                     value={values[category.key] ?? ''}
                                     onChange={(event) =>
@@ -65,7 +69,7 @@ export function SalesSection({
                 })}
             </div>
             <div className="flex items-center justify-between rounded-md bg-muted px-4 py-3">
-                <span className="font-medium">Total sales</span>
+                <span className="font-medium">{t('Total sales')}</span>
                 <span
                     className="text-lg font-semibold tabular-nums"
                     aria-live="polite"

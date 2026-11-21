@@ -1,7 +1,9 @@
+import { t, useLocale } from '@/lib/i18n';
 import { usePage } from '@inertiajs/react';
 import { PsiMark } from '@/components/psi-mark';
 
 export default function AppLogo() {
+    useLocale();
     const { name } = usePage().props;
 
     return (
@@ -12,7 +14,7 @@ export default function AppLogo() {
                     {name}
                 </span>
                 <span className="truncate text-xs opacity-75">
-                    Park Solutions Inc.
+                    {t('Park Solutions Inc.')}
                 </span>
             </div>
         </>

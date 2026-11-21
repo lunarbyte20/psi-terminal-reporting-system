@@ -1,5 +1,6 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Head, router, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FormSection, fieldAria, FormField } from '@/components/form-field';
 import Heading from '@/components/heading';
 import { ReportStatusBadge } from '@/components/report-status-badge';
@@ -65,12 +66,15 @@ export default function ReportEdit({
     issues: OperationalIssue[];
     issueOptions: { statuses: Option[]; canManage: boolean };
 }) {
+    useLocale();
     const page = usePage();
     const errors = page.props.errors as Record<string, string | undefined>;
     // The Admin may encode a report herself and approve it in the same step; supervisors submit for review.
     const finalIntent = page.props.auth.can.administer ? 'approve' : 'submit';
     const finalLabel =
-        finalIntent === 'approve' ? 'Save and approve' : 'Submit for review';
+        finalIntent === 'approve'
+            ? t('Save and approve')
+            : t('Submit for review');
     const [sales, setSales] = useState(() => initialSales(report));
     const [ridership, setRidership] = useState(() => initialRidership(report));
     const [remarks, setRemarks] = useState(report.remarks ?? '');
@@ -78,6 +82,76 @@ export default function ReportEdit({
         'save' | 'submit' | 'approve' | null
     >(null);
     const [confirming, setConfirming] = useState(false);
+
+    const draftKey = `psi:report-draft:${report.id}`;
+    type LocalDraft = {
+        savedAt: string;
+        sales: Record<string, string>;
+        ridership: RidershipEntry[];
+        remarks: string;
+    };
+    const [pendingRestore, setPendingRestore] = useState<LocalDraft | null>(
+        () => {
+            if (typeof window === 'undefined') return null;
+            try {
+                const raw = window.localStorage.getItem(draftKey);
+                if (!raw) return null;
+                const parsed = JSON.parse(raw) as LocalDraft;
+                if (!parsed || typeof parsed.savedAt !== 'string') return null;
+                return parsed;
+            } catch {
+                return null;
+            }
+        },
+    );
+    const [localSavedAt, setLocalSavedAt] = useState<string | null>(null);
+    const didMount = useRef(false);
+
+    useEffect(() => {
+        if (!didMount.current) {
+            didMount.current = true;
+            return;
+        }
+        const timer = window.setTimeout(() => {
+            try {
+                const savedAt = new Date().toLocaleTimeString([], {
+                    hour: '2-digit',
+                    minute: '2-digit',
+                });
+                const payload: LocalDraft = {
+                    savedAt,
+                    sales,
+                    ridership,
+                    remarks,
+                };
+                window.localStorage.setItem(draftKey, JSON.stringify(payload));
+                setLocalSavedAt(savedAt);
+            } catch {
+                // Ignore storage quota or private-mode errors.
+            }
+        }, 800);
+
+        return () => window.clearTimeout(timer);
+    }, [draftKey, sales, ridership, remarks]);
+
+    function discardLocalDraft() {
+        try {
+            window.localStorage.removeItem(draftKey);
+        } catch {
+            // Ignore.
+        }
+        setPendingRestore(null);
+        setLocalSavedAt(null);
+    }
+
+    function restoreLocalDraft() {
+        if (!pendingRestore) return;
+        setSales(pendingRestore.sales);
+        setRidership(pendingRestore.ridership);
+        setRemarks(pendingRestore.remarks);
+        setLocalSavedAt(pendingRestore.savedAt);
+        setPendingRestore(null);
+    }
 
     const amountsValid = Object.values(sales).every(isValidAmount);
     const totalRidership = ridership.reduce(
@@ -106,6 +180,7 @@ export default function ReportEdit({
             {
                 preserveScroll: (page) =>
                     Object.keys(page.props.errors ?? {}).length === 0,
+                onSuccess: () => discardLocalDraft(),
                 onStart: () => setProcessing(intent),
                 onFinish: () => {
                     setProcessing(null);
@@ -117,17 +192,55 @@ export default function ReportEdit({
 
     return (
         <>
-            <Head title={`Report · ${report.terminal.name}`} />
+            <Head title={t('Report · :0', { '0': report.terminal.name })} />
             <main className="grid w-full grid-cols-1 gap-6 p-4 pb-32 sm:p-6 sm:pb-32">
                 <Heading
                     title={report.terminal.name}
-                    description={`Week of ${report.week.label} (${formatDays(report.week.days)}) · due ${formatDate(report.week.due_on)}`}
+                    description={t(
+                        'Supervisor: :0 · Week of :1 (:2) · due :3',
+                        {
+                            '0': report.supervisor ?? t('Unassigned'),
+                            '1': report.week.label,
+                            '2': formatDays(report.week.days),
+                            '3': formatDate(report.week.due_on),
+                        },
+                    )}
                     badge={<ReportStatusBadge status={report.status} />}
                     back={{
                         href: `/reports?week=${report.week.id}`,
-                        label: 'Back to reports',
+                        label: t('Back to reports'),
                     }}
                 />
+
+                {pendingRestore && (
+                    <div
+                        role="status"
+                        className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+                    >
+                        <span>
+                            {t('Unsaved local draft from')}
+                            {pendingRestore.savedAt}{' '}
+                            {t('was found in this browser.')}
+                        </span>
+                        <div className="flex gap-2">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={discardLocalDraft}
+                            >
+                                {t('Discard')}
+                            </Button>
+                            <Button
+                                type="button"
+                                size="sm"
+                                onClick={restoreLocalDraft}
+                            >
+                                {t('Restore draft')}
+                            </Button>
+                        </div>
+                    </div>
+                )}
 
                 {returnNote ? (
                     <div
@@ -135,8 +248,9 @@ export default function ReportEdit({
                         className="rounded-lg border border-status-danger-border bg-status-danger-bg p-4 text-status-danger-fg"
                     >
                         <p className="font-semibold">
-                            Returned by {returnNote.by}: please correct and
-                            submit again
+                            {t('Returned by')}
+                            {returnNote.by}
+                            {t(': please correct and submit again')}
                         </p>
                         <p className="mt-1 text-sm whitespace-pre-line">
                             {returnNote.comment}
@@ -144,25 +258,35 @@ export default function ReportEdit({
                     </div>
                 ) : (
                     <RequirementGuide
-                        title="How to fill in this report"
-                        summary="Encode the week's sales and ridership. Your work is kept when you save a draft."
+                        title={t('How to fill in this report')}
+                        summary={t(
+                            "Encode the week's sales and ridership. Your work is kept when you save a draft.",
+                        )}
                         items={[
                             {
-                                label: 'Save draft',
-                                detail: 'Keeps your figures so you can finish later.',
+                                label: t('Save draft'),
+                                detail: t(
+                                    'Keeps your figures so you can finish later.',
+                                ),
                             },
                             finalIntent === 'approve'
                                 ? {
-                                      label: 'Save and approve',
-                                      detail: 'Use this when you encode the report yourself. It counts in the dashboard right away.',
+                                      label: t('Save and approve'),
+                                      detail: t(
+                                          'Use this when you encode the report yourself. It counts in the dashboard right away.',
+                                      ),
                                   }
                                 : {
-                                      label: 'Submit for review',
-                                      detail: 'Sends the report to the Admin. You cannot edit it unless it is returned.',
+                                      label: t('Submit for review'),
+                                      detail: t(
+                                          'Sends the report to the Admin. You cannot edit it unless it is returned.',
+                                      ),
                                   },
                             {
-                                label: 'Totals',
-                                detail: 'Computed for you; the server checks them again when you save.',
+                                label: t('Totals'),
+                                detail: t(
+                                    'Computed for you; the server checks them again when you save.',
+                                ),
                             },
                         ]}
                     />
@@ -204,12 +328,14 @@ export default function ReportEdit({
                         }
                     />
                     <FormSection
-                        title="Remarks"
-                        description="Anything else management should know about this week. Record problems that need follow-up as issues below."
+                        title={t('Remarks')}
+                        description={t(
+                            'Anything else management should know about this week. Record problems that need follow-up as issues below.',
+                        )}
                     >
                         <FormField
                             id="remarks"
-                            label="Remarks"
+                            label={t('Remarks')}
                             error={errors.remarks}
                         >
                             <Textarea
@@ -245,7 +371,9 @@ export default function ReportEdit({
             <FixedActionBar>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <p className="text-sm">
-                        <span className="text-muted-foreground">Total </span>
+                        <span className="text-muted-foreground">
+                            {t('Total')}
+                        </span>
                         <span className="font-semibold tabular-nums">
                             {formatPeso(salesTotal(sales))}
                         </span>
@@ -253,7 +381,16 @@ export default function ReportEdit({
                         <span className="font-semibold tabular-nums">
                             {formatCount(totalRidership)}
                         </span>
-                        <span className="text-muted-foreground"> riders</span>
+                        <span className="text-muted-foreground">
+                            {' '}
+                            {t('riders')}
+                        </span>
+                        {localSavedAt && (
+                            <span className="ml-2 text-xs text-muted-foreground">
+                                {t('· Local draft saved at')}
+                                {localSavedAt}
+                            </span>
+                        )}
                     </p>
                     <div className="flex flex-1 justify-end gap-2 sm:flex-none">
                         <Button
@@ -263,7 +400,9 @@ export default function ReportEdit({
                             disabled={processing !== null || !amountsValid}
                             onClick={() => send('save')}
                         >
-                            {processing === 'save' ? 'Saving…' : 'Save draft'}
+                            {processing === 'save'
+                                ? t('Saving…')
+                                : t('Save draft')}
                         </Button>
                         <Button
                             type="button"
@@ -271,7 +410,7 @@ export default function ReportEdit({
                             disabled={processing !== null || !amountsValid}
                             onClick={() => setConfirming(true)}
                         >
-                            {finalLabel}
+                            {t(finalLabel)}
                         </Button>
                     </div>
                 </div>
@@ -282,16 +421,23 @@ export default function ReportEdit({
                     <DialogHeader>
                         <DialogTitle>
                             {finalIntent === 'approve'
-                                ? 'Save and approve this report?'
-                                : 'Submit this report?'}
+                                ? t('Save and approve this report?')
+                                : t('Submit this report?')}
                         </DialogTitle>
                         <DialogDescription>
-                            Total sales {formatPeso(salesTotal(sales))} and
-                            ridership {formatCount(totalRidership)} for{' '}
-                            {report.terminal.name}, week of {report.week.label}.{' '}
+                            {t('Total sales')}
+                            {formatPeso(salesTotal(sales))} {t('and ridership')}
+                            {formatCount(totalRidership)} {t('for')}{' '}
+                            {report.terminal.name}
+                            {t(', week of')}
+                            {t(report.week.label)}.{' '}
                             {finalIntent === 'approve'
-                                ? 'It will count in the dashboard totals right away. You can reopen it later if a correction is needed.'
-                                : 'You cannot change it after submitting unless the Admin returns it.'}
+                                ? t(
+                                      'It will count in the dashboard totals right away. You can reopen it later if a correction is needed.',
+                                  )
+                                : t(
+                                      'You cannot change it after submitting unless the Admin returns it.',
+                                  )}
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
@@ -301,7 +447,7 @@ export default function ReportEdit({
                                 variant="outline"
                                 disabled={processing !== null}
                             >
-                                Keep editing
+                                {t('Keep editing')}
                             </Button>
                         </DialogClose>
                         <Button
@@ -310,7 +456,7 @@ export default function ReportEdit({
                             onClick={() => send(finalIntent)}
                         >
                             {processing === finalIntent
-                                ? 'Saving…'
+                                ? t('Saving…')
                                 : finalLabel}
                         </Button>
                     </DialogFooter>

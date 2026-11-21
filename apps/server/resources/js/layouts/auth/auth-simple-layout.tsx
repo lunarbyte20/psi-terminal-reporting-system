@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Link } from '@inertiajs/react';
 import { PsiMark } from '@/components/psi-mark';
 import { home } from '@/routes';
@@ -8,6 +9,7 @@ export default function AuthSimpleLayout({
     title,
     description,
 }: AuthLayoutProps) {
+    useLocale();
     return (
         <div className="flex min-h-svh flex-col items-center justify-center gap-6 border-t-8 border-[var(--psi-yellow)] bg-background p-6 md:p-10">
             <div className="w-full max-w-sm">
@@ -19,15 +21,15 @@ export default function AuthSimpleLayout({
                         >
                             <PsiMark className="h-auto w-44" />
                             <span className="text-sm text-muted-foreground">
-                                Park Solutions Inc.
+                                {t('Park Solutions Inc.')}
                             </span>
-                            <span className="sr-only">{title}</span>
+                            <span className="sr-only">{t(title)}</span>
                         </Link>
 
                         <div className="space-y-2 text-center">
-                            <h1 className="text-xl font-medium">{title}</h1>
+                            <h1 className="text-xl font-medium">{t(title)}</h1>
                             <p className="text-center text-sm text-muted-foreground">
-                                {description}
+                                {t(description)}
                             </p>
                         </div>
                     </div>

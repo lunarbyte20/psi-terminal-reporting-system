@@ -1,5 +1,7 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Form, Link } from '@inertiajs/react';
 import { useState } from 'react';
+import { SearchableSelect } from '@/components/searchable-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -17,6 +19,8 @@ export type SelectFilter = {
     label: string;
     value: string;
     options: Option[];
+    /** Type-to-search picker for long lists such as supervisors and terminals. */
+    searchable?: boolean;
 };
 
 /**
@@ -38,6 +42,7 @@ export function ListFilters({
     hidden?: Record<string, string>;
     filtered: boolean;
 }) {
+    useLocale();
     const [values, setValues] = useState<Record<string, string>>(() =>
         Object.fromEntries(
             selects.map((select) => [select.name, select.value]),
@@ -62,34 +67,49 @@ export function ListFilters({
             {selects.map((select) => (
                 <div key={select.name} className="min-w-44 space-y-2">
                     <Label htmlFor={`filter-${select.name}`}>
-                        {select.label}
+                        {t(select.label)}
                     </Label>
-                    <Select
-                        value={values[select.name]}
-                        onValueChange={(value) =>
-                            setValues((current) => ({
-                                ...current,
-                                [select.name]: value,
-                            }))
-                        }
-                    >
-                        <SelectTrigger
+                    {select.searchable ? (
+                        <SearchableSelect
                             id={`filter-${select.name}`}
-                            className="w-full"
+                            value={values[select.name]}
+                            onChange={(value) =>
+                                setValues((current) => ({
+                                    ...current,
+                                    [select.name]: value,
+                                }))
+                            }
+                            options={select.options}
+                            searchPlaceholder={`Search ${select.label.toLowerCase()}`}
+                        />
+                    ) : (
+                        <Select
+                            value={values[select.name]}
+                            onValueChange={(value) =>
+                                setValues((current) => ({
+                                    ...current,
+                                    [select.name]: value,
+                                }))
+                            }
                         >
-                            <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {select.options.map((option) => (
-                                <SelectItem
-                                    key={option.value}
-                                    value={option.value}
-                                >
-                                    {option.label}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
+                            <SelectTrigger
+                                id={`filter-${select.name}`}
+                                className="w-full"
+                            >
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {select.options.map((option) => (
+                                    <SelectItem
+                                        key={option.value}
+                                        value={option.value}
+                                    >
+                                        {t(option.label)}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    )}
                     {values[select.name] !== ANY && (
                         <input
                             type="hidden"
@@ -103,7 +123,7 @@ export function ListFilters({
                 <input key={name} type="hidden" name={name} value={value} />
             ))}
             <Button type="submit" variant="view">
-                Apply filters
+                {t('Apply filters')}
             </Button>
             {filtered && (
                 <Button variant="outline" asChild>
@@ -114,7 +134,7 @@ export function ListFilters({
                                 : action
                         }
                     >
-                        Clear filters
+                        {t('Clear filters')}
                     </Link>
                 </Button>
             )}

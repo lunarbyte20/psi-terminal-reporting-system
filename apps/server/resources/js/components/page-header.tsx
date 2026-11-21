@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import type { ReactNode } from 'react';
 
 /**
@@ -13,18 +14,19 @@ export function PageHeader({
     description?: ReactNode;
     actions?: ReactNode;
 }) {
+    useLocale();
     return (
         <header className="flex flex-wrap items-center justify-between gap-4">
             <div className="min-w-0">
                 <p className="text-[10px] font-bold tracking-[0.15em] text-[#6566a5] uppercase dark:text-[#b9b9f0]">
-                    Park Solutions Inc. / Reporting
+                    {t('Park Solutions Inc. / Reporting')}
                 </p>
                 <h1 className="mt-2 text-2xl font-bold tracking-tight sm:text-[26px]">
                     {title}
                 </h1>
                 {description && (
                     <p className="mt-1 text-sm text-muted-foreground">
-                        {description}
+                        {t(description)}
                     </p>
                 )}
             </div>
@@ -51,6 +53,7 @@ export function Panel({
     className?: string;
     children: ReactNode;
 }) {
+    useLocale();
     return (
         <section
             className={`min-w-0 rounded-xl border bg-card p-4 sm:p-5 print:break-inside-avoid ${className}`}
@@ -61,7 +64,7 @@ export function Panel({
                     <h2 className="text-[15px] font-bold">{title}</h2>
                     {description && (
                         <p className="mt-1 text-xs text-muted-foreground">
-                            {description}
+                            {t(description)}
                         </p>
                     )}
                 </div>

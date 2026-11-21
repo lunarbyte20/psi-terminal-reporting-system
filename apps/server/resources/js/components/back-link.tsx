@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Link, type InertiaLinkProps } from '@inertiajs/react';
 import { ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,6 +10,7 @@ export default function BackLink({
     href: NonNullable<InertiaLinkProps['href']>;
     label: string;
 }) {
+    useLocale();
     return (
         <Button
             asChild
@@ -17,7 +19,7 @@ export default function BackLink({
         >
             <Link href={href}>
                 <ArrowLeft aria-hidden="true" />
-                <span>{label}</span>
+                <span>{t(label)}</span>
             </Link>
         </Button>
     );

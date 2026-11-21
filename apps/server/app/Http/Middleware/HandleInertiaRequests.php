@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Modules\Issues\Models\IssueTag;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Middleware;
@@ -41,6 +42,8 @@ class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'name' => config('app.name'),
+            'locale' => app()->getLocale(),
+            'issueTags' => fn () => $user === null ? [] : IssueTag::query()->orderBy('name')->limit(500)->get(['id', 'name', 'color', 'archived_at']),
             'auth' => [
                 'user' => $user,
                 'role' => $user?->primaryRole()?->label(),
@@ -51,6 +54,22 @@ class HandleInertiaRequests extends Middleware
                 ],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            // Bell in the header: unread count and the latest few, two small indexed queries.
+            'notifications' => fn () => $user === null ? null : [
+                'unread' => $user->unreadNotifications()->count(),
+                'items' => $user->notifications()->latest()->limit(6)->get()
+                    ->map(fn ($notification) => [
+                        'id' => $notification->id,
+                        'title_key' => $notification->data['title_key'] ?? null,
+                        'title_values' => $notification->data['title_values'] ?? [],
+                        'body_key' => $notification->data['body_key'] ?? null,
+                        'body_values' => $notification->data['body_values'] ?? [],
+                        'title' => isset($notification->data['title_key']) ? __($notification->data['title_key'], $notification->data['title_values'] ?? []) : (string) ($notification->data['title'] ?? 'Notification'),
+                        'body' => isset($notification->data['body_key']) ? __($notification->data['body_key'], $notification->data['body_values'] ?? []) : (string) ($notification->data['body'] ?? ''),
+                        'read' => $notification->read_at !== null,
+                        'at' => $notification->created_at?->toIso8601String(),
+                    ])->values(),
+            ],
         ];
     }
 }

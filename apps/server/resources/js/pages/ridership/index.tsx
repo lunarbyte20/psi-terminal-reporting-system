@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Head, router } from '@inertiajs/react';
 import { PageHeader, Panel } from '@/components/page-header';
 import { Label } from '@/components/ui/label';
@@ -23,12 +24,13 @@ type Summary = {
 };
 
 function SummaryTable({ rows, nameLabel }: { rows: Row[]; nameLabel: string }) {
+    useLocale();
     const total = rows.reduce((sum, row) => sum + row.ridership, 0);
 
     if (rows.length === 0 || total === 0) {
         return (
             <p className="py-2 text-sm text-muted-foreground">
-                No approved ridership for this month yet.
+                {t('No approved ridership for this month yet.')}
             </p>
         );
     }
@@ -39,9 +41,15 @@ function SummaryTable({ rows, nameLabel }: { rows: Row[]; nameLabel: string }) {
                 <thead className="bg-[#fafaff] text-[9px] tracking-wider text-muted-foreground uppercase dark:bg-muted">
                     <tr>
                         <th className="px-2.5 py-2.5 text-left">{nameLabel}</th>
-                        <th className="px-2.5 py-2.5 text-right">Trips</th>
-                        <th className="px-2.5 py-2.5 text-right">Ridership</th>
-                        <th className="px-2.5 py-2.5 text-right">Share</th>
+                        <th className="px-2.5 py-2.5 text-right">
+                            {t('Trips')}
+                        </th>
+                        <th className="px-2.5 py-2.5 text-right">
+                            {t('Ridership')}
+                        </th>
+                        <th className="px-2.5 py-2.5 text-right">
+                            {t('Share')}
+                        </th>
                     </tr>
                 </thead>
                 <tbody>
@@ -66,7 +74,7 @@ function SummaryTable({ rows, nameLabel }: { rows: Row[]; nameLabel: string }) {
                 </tbody>
                 <tfoot>
                     <tr className="font-semibold">
-                        <td className="px-2.5 pt-3">Total</td>
+                        <td className="px-2.5 pt-3">{t('Total')}</td>
                         <td className="px-2.5 pt-3 text-right tabular-nums">
                             {formatCount(
                                 rows.reduce((sum, row) => sum + row.trips, 0),
@@ -90,21 +98,24 @@ export default function MonthlyRidership({
     months: Option[];
     summary: Summary;
 }) {
+    useLocale();
     const options = months.some((month) => month.value === summary.month)
         ? months
         : [{ value: summary.month, label: summary.label }, ...months];
 
     return (
         <>
-            <Head title="Monthly Ridership" />
+            <Head title={t('Monthly Ridership')} />
             <main className="grid w-full grid-cols-1 gap-4 p-4 sm:p-6 lg:px-[3.5%] lg:py-8">
                 <PageHeader
-                    title="Monthly Ridership"
-                    description="Passengers from approved reports, consolidated for the month."
+                    title={t('Monthly Ridership')}
+                    description={t(
+                        'Passengers from approved reports, consolidated for the month.',
+                    )}
                 />
                 <div className="min-w-60 space-y-1.5 sm:max-w-xs">
                     <Label htmlFor="ridership-month" className="text-xs">
-                        Month
+                        {t('Month')}
                     </Label>
                     <Select
                         value={summary.month}
@@ -124,7 +135,7 @@ export default function MonthlyRidership({
                                     key={month.value}
                                     value={month.value}
                                 >
-                                    {month.label}
+                                    {t(month.label)}
                                 </SelectItem>
                             ))}
                         </SelectContent>
@@ -133,27 +144,33 @@ export default function MonthlyRidership({
 
                 <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                     <Panel
-                        title="By reporting week"
-                        description={summary.label}
+                        title={t('By reporting week')}
+                        description={t(summary.label)}
                     >
                         <SummaryTable rows={summary.weeks} nameLabel="Week" />
                     </Panel>
-                    <Panel title="By vehicle type" description={summary.label}>
+                    <Panel
+                        title={t('By vehicle type')}
+                        description={t(summary.label)}
+                    >
                         <SummaryTable
                             rows={summary.vehicle_types}
                             nameLabel="Vehicle type"
                         />
                     </Panel>
                     <Panel
-                        title="By supervisor"
-                        description="Supervisor on each report"
+                        title={t('By supervisor')}
+                        description={t('Supervisor on each report')}
                     >
                         <SummaryTable
                             rows={summary.supervisors}
                             nameLabel="Supervisor"
                         />
                     </Panel>
-                    <Panel title="By terminal" description={summary.label}>
+                    <Panel
+                        title={t('By terminal')}
+                        description={t(summary.label)}
+                    >
                         <SummaryTable
                             rows={summary.terminals}
                             nameLabel="Terminal"

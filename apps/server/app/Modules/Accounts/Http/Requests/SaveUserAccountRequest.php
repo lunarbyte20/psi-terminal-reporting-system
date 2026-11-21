@@ -32,8 +32,8 @@ class SaveUserAccountRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'email.unique' => 'Another account already uses this email address.',
-            'supervisor_id.required' => 'Choose the supervisor record this account belongs to.',
+            'email.unique' => __('Another account already uses this email address.'),
+            'supervisor_id.required' => __('Choose the supervisor record this account belongs to.'),
         ];
     }
 

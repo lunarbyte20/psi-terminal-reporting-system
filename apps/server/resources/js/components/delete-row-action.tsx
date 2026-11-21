@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Form } from '@inertiajs/react';
 import { Trash2 } from 'lucide-react';
 import { useState } from 'react';
@@ -23,6 +24,7 @@ export function DeleteRowAction({
     name: string;
     description: string;
 }) {
+    useLocale();
     const [open, setOpen] = useState(false);
 
     return (
@@ -30,15 +32,18 @@ export function DeleteRowAction({
             <RowAction
                 icon={Trash2}
                 tone="delete"
-                label={`Delete ${name}`}
+                label={t('Delete :0', { '0': name })}
                 trigger={(button) => (
                     <DialogTrigger asChild>{button}</DialogTrigger>
                 )}
             />
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>Delete {name}?</DialogTitle>
-                    <DialogDescription>{description}</DialogDescription>
+                    <DialogTitle>
+                        {t('Delete')}
+                        {name}?
+                    </DialogTitle>
+                    <DialogDescription>{t(description)}</DialogDescription>
                 </DialogHeader>
                 <Form
                     method="delete"
@@ -62,7 +67,7 @@ export function DeleteRowAction({
                                         variant="outline"
                                         disabled={processing}
                                     >
-                                        Cancel
+                                        {t('Cancel')}
                                     </Button>
                                 </DialogClose>
                                 <Button
@@ -70,7 +75,7 @@ export function DeleteRowAction({
                                     variant="destructive"
                                     disabled={processing}
                                 >
-                                    {processing ? 'Deleting…' : 'Delete'}
+                                    {processing ? t('Deleting…') : t('Delete')}
                                 </Button>
                             </DialogFooter>
                         </div>

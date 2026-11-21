@@ -75,6 +75,7 @@ class GetWeeklyReportDetails
             ->join('reporting_weeks', 'reporting_weeks.id', '=', 'weekly_reports.reporting_week_id')
             ->where('weekly_reports.terminal_id', $report->terminal_id)
             ->where('weekly_reports.id', '!=', $report->id)
+            ->where('reporting_weeks.starts_on', '<', $report->reportingWeek->starts_on)
             ->orderByDesc('reporting_weeks.starts_on')
             ->value('weekly_reports.id');
         $lastPassengers = RidershipLine::query()->where('weekly_report_id', $lastReportId ?? 0)
@@ -82,7 +83,7 @@ class GetWeeklyReportDetails
 
         return array_values(VehicleType::query()
             ->where(fn ($query) => $query->whereNull('archived_at')->orWhereIn('id', $lines->keys()))
-            ->ordered()->get(['id', 'name'])
+            ->ordered()->get(['id', 'name', 'number_of_passengers'])
             ->map(function (VehicleType $type) use ($lines, $lastPassengers): array {
                 $line = $lines->get($type->id);
 
@@ -90,7 +91,7 @@ class GetWeeklyReportDetails
                     'vehicle_type_id' => $type->id,
                     'vehicle_type' => $type->name,
                     'passengers_per_trip' => $line->passengers_per_trip ?? 0,
-                    'suggested_passengers_per_trip' => $lastPassengers->get($type->id),
+                    'suggested_passengers_per_trip' => $line !== null ? null : ($lastPassengers->get($type->id) ?? $type->number_of_passengers),
                     'trips' => $line->trips ?? 0,
                     'ridership' => $line->ridership ?? 0,
                 ];

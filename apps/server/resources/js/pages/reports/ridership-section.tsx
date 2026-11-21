@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { FormSection } from '@/components/form-field';
 import InputError from '@/components/input-error';
 import { Input } from '@/components/ui/input';
@@ -30,6 +31,7 @@ export function RidershipSection({
         value: string,
     ) => void;
 }) {
+    useLocale();
     const total = rows.reduce(
         (sum, row) =>
             sum + wholeNumber(row.passengers_per_trip) * wholeNumber(row.trips),
@@ -38,8 +40,10 @@ export function RidershipSection({
 
     return (
         <FormSection
-            title="Ridership"
-            description="For each vehicle type, enter the usual passengers per trip and the number of trips this week. Leave both empty if none."
+            title={t('Ridership')}
+            description={t(
+                'For each vehicle type, enter the usual number of passengers per trip and the number of trips this week. Leave both empty if none.',
+            )}
         >
             <InputError message={errors.ridership} />
             <ul className="space-y-3">
@@ -66,7 +70,7 @@ export function RidershipSection({
                                     htmlFor={passengersId}
                                     className="text-xs"
                                 >
-                                    Passengers per trip
+                                    {t('Number of passengers')}
                                 </Label>
                                 <Input
                                     id={passengersId}
@@ -74,8 +78,8 @@ export function RidershipSection({
                                     autoComplete="off"
                                     placeholder={
                                         row.suggested
-                                            ? String(row.suggested)
-                                            : '0'
+                                            ? t(String(row.suggested))
+                                            : t('0')
                                     }
                                     aria-invalid={
                                         passengersError ? true : undefined
@@ -97,13 +101,13 @@ export function RidershipSection({
                             </div>
                             <div className="space-y-1">
                                 <Label htmlFor={tripsId} className="text-xs">
-                                    Trips
+                                    {t('Trips')}
                                 </Label>
                                 <Input
                                     id={tripsId}
                                     inputMode="numeric"
                                     autoComplete="off"
-                                    placeholder="0"
+                                    placeholder={t('0')}
                                     aria-invalid={tripsError ? true : undefined}
                                     className="h-11 text-right text-base tabular-nums sm:h-9 sm:text-sm"
                                     value={row.trips}
@@ -122,7 +126,7 @@ export function RidershipSection({
                             </div>
                             <p className="col-span-2 flex justify-between text-sm 2xl:col-span-1 2xl:block 2xl:text-right">
                                 <span className="text-muted-foreground sm:block sm:text-xs">
-                                    Ridership
+                                    {t('Ridership')}
                                 </span>
                                 <span className="font-semibold tabular-nums">
                                     {formatCount(ridership)}
@@ -133,7 +137,7 @@ export function RidershipSection({
                 })}
             </ul>
             <div className="flex items-center justify-between rounded-md bg-muted px-4 py-3">
-                <span className="font-medium">Total ridership</span>
+                <span className="font-medium">{t('Total ridership')}</span>
                 <span
                     className="text-lg font-semibold tabular-nums"
                     aria-live="polite"

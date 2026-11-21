@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Form, Head } from '@inertiajs/react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
@@ -9,6 +10,7 @@ import {
     RequiredLegend,
 } from '@/components/form-field';
 import { OneTimePassword } from '@/components/one-time-password';
+import { SearchableSelect } from '@/components/searchable-select';
 import { StatusBadge } from '@/components/status-badge';
 import { Input } from '@/components/ui/input';
 import {
@@ -43,39 +45,51 @@ export default function UserAccountFormPage({
     supervisors: NamedRecord[];
     temporaryPassword: string | null;
 }) {
+    useLocale();
     const [role, setRole] = useState(account?.role ?? 'supervisor');
     const [supervisorId, setSupervisorId] = useState(
         account?.supervisor_id ? String(account.supervisor_id) : '',
     );
-    const title = account ? account.name : 'Add account';
+    const title = account ? account.name : t('Add account');
 
     return (
         <>
-            <Head title={title} />
+            <Head title={t(title)} />
             <main className="grid w-full grid-cols-1 gap-6 p-4 pb-32 sm:p-6 sm:pb-32">
                 <Heading
-                    title={title}
+                    title={t(title)}
                     description={
                         account
                             ? account.email
-                            : 'Create a sign-in account. A temporary password is generated for you to share.'
+                            : t(
+                                  'Create a sign-in account. A temporary password is generated for you to share.',
+                              )
                     }
                     badge={
                         account &&
                         (account.active ? (
                             account.awaiting_first_sign_in ? (
                                 <StatusBadge
-                                    label="Waiting for first sign-in"
+                                    label={t('Waiting for first sign-in')}
                                     tone="warning"
                                 />
                             ) : (
-                                <StatusBadge label="Active" tone="success" />
+                                <StatusBadge
+                                    label={t('Active')}
+                                    tone="success"
+                                />
                             )
                         ) : (
-                            <StatusBadge label="Deactivated" tone="neutral" />
+                            <StatusBadge
+                                label={t('Deactivated')}
+                                tone="neutral"
+                            />
                         ))
                     }
-                    back={{ href: '/admin/users', label: 'Back to accounts' }}
+                    back={{
+                        href: '/admin/users',
+                        label: t('Back to accounts'),
+                    }}
                 />
 
                 {temporaryPassword && (
@@ -95,10 +109,10 @@ export default function UserAccountFormPage({
                     {({ errors, processing }) => (
                         <>
                             <RequiredLegend />
-                            <FormSection title="Account details">
+                            <FormSection title={t('Account details')}>
                                 <FormField
                                     id="name"
-                                    label="Full name"
+                                    label={t('Full name')}
                                     required
                                     error={errors.name}
                                 >
@@ -115,9 +129,11 @@ export default function UserAccountFormPage({
                                 </FormField>
                                 <FormField
                                     id="email"
-                                    label="Email address"
+                                    label={t('Email address')}
                                     required
-                                    hint="The person signs in with this address."
+                                    hint={t(
+                                        'The person signs in with this address.',
+                                    )}
                                     error={errors.email}
                                 >
                                     <Input
@@ -135,12 +151,14 @@ export default function UserAccountFormPage({
                                 </FormField>
                                 <FormField
                                     id="role"
-                                    label="Role"
+                                    label={t('Role')}
                                     required
                                     hint={
                                         account?.is_self
-                                            ? 'You cannot change your own role.'
-                                            : undefined
+                                            ? t(
+                                                  'You cannot change your own role.',
+                                              )
+                                            : t(undefined)
                                     }
                                     error={errors.role}
                                 >
@@ -165,7 +183,7 @@ export default function UserAccountFormPage({
                                                     key={option.value}
                                                     value={option.value}
                                                 >
-                                                    {option.label}
+                                                    {t(option.label)}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -179,40 +197,35 @@ export default function UserAccountFormPage({
                                 {role === 'supervisor' && (
                                     <FormField
                                         id="supervisor_id"
-                                        label="Supervisor record"
+                                        label={t('Supervisor record')}
                                         required
-                                        hint="Links this account to the terminals assigned to that supervisor. Only supervisors without an account are listed."
+                                        hint={t(
+                                            'Links this account to the terminals assigned to that supervisor. Only supervisors without an account are listed.',
+                                        )}
                                         error={errors.supervisor_id}
                                     >
-                                        <Select
+                                        <SearchableSelect
+                                            id="supervisor_id"
                                             value={supervisorId}
-                                            onValueChange={setSupervisorId}
-                                        >
-                                            <SelectTrigger
-                                                {...fieldAria('supervisor_id', {
-                                                    required: true,
-                                                    hint: true,
-                                                    error: errors.supervisor_id,
-                                                })}
-                                                className="w-full"
-                                            >
-                                                <SelectValue placeholder="Choose a supervisor" />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {supervisors.map(
-                                                    (supervisor) => (
-                                                        <SelectItem
-                                                            key={supervisor.id}
-                                                            value={String(
-                                                                supervisor.id,
-                                                            )}
-                                                        >
-                                                            {supervisor.name}
-                                                        </SelectItem>
+                                            onChange={setSupervisorId}
+                                            options={supervisors.map(
+                                                (supervisor) => ({
+                                                    value: String(
+                                                        supervisor.id,
                                                     ),
-                                                )}
-                                            </SelectContent>
-                                        </Select>
+                                                    label: supervisor.name,
+                                                }),
+                                            )}
+                                            placeholder={t(
+                                                'Choose a supervisor',
+                                            )}
+                                            searchPlaceholder="Search supervisors"
+                                            emptyText="No supervisor without an account matches"
+                                            invalid={Boolean(
+                                                errors.supervisor_id,
+                                            )}
+                                            describedBy="supervisor_id-hint"
+                                        />
                                         <input
                                             type="hidden"
                                             name="supervisor_id"
@@ -225,13 +238,15 @@ export default function UserAccountFormPage({
                                 fixed
                                 cancelHref="/admin/users"
                                 submitLabel={
-                                    account ? 'Save changes' : 'Create account'
+                                    account
+                                        ? t('Save changes')
+                                        : t('Create account')
                                 }
                                 processing={processing}
                                 processingLabel={
                                     account
-                                        ? 'Saving changes…'
-                                        : 'Creating account…'
+                                        ? t('Saving changes…')
+                                        : t('Creating account…')
                                 }
                             />
                         </>

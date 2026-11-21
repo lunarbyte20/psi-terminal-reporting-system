@@ -1,8 +1,15 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Head, router, usePage } from '@inertiajs/react';
+import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { fieldAria, FormField } from '@/components/form-field';
 import { PageHeader, Panel } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
+import {
+    Collapsible,
+    CollapsibleContent,
+    CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -16,10 +23,16 @@ import { formatDateTime } from '@/lib/format';
 import type { ReportingWeek } from '@/types';
 import { RecommendationsEditor } from './recommendations-editor';
 
+type SectionOption = {
+    key: string;
+    label: string;
+};
+
 type Evaluation = {
     key_concerns: string | null;
     evaluation: string | null;
     recommendations: string[];
+    sections: Record<string, string>;
     prepared_by: string;
     updated_by: string | null;
     updated_at: string;
@@ -38,13 +51,16 @@ export default function EvaluationPage({
     weeks,
     week,
     evaluation,
+    sectionOptions,
     canEdit,
 }: {
     weeks: ReportingWeek[];
     week: ReportingWeek | null;
     evaluation: Evaluation | null;
+    sectionOptions: SectionOption[];
     canEdit: boolean;
 }) {
+    useLocale();
     const errors = usePage().props.errors as Record<string, string | undefined>;
     const [keyConcerns, setKeyConcerns] = useState(
         evaluation?.key_concerns ?? '',
@@ -52,6 +68,18 @@ export default function EvaluationPage({
     const [assessment, setAssessment] = useState(evaluation?.evaluation ?? '');
     const [recommendations, setRecommendations] = useState(() =>
         startingRows(evaluation?.recommendations),
+    );
+    const [sections, setSections] = useState<Record<string, string>>(
+        () => evaluation?.sections ?? {},
+    );
+    const hasSavedSections = Object.values(evaluation?.sections ?? {}).some(
+        (v) => v.trim() !== '',
+    );
+    const hasSectionErrors = sectionOptions.some(
+        (opt) => errors[`sections.${opt.key}`] !== undefined,
+    );
+    const [sectionsOpen, setSectionsOpen] = useState(
+        hasSavedSections || hasSectionErrors,
     );
     const [saving, setSaving] = useState(false);
 
@@ -63,6 +91,7 @@ export default function EvaluationPage({
                 key_concerns: keyConcerns,
                 evaluation: assessment,
                 recommendations,
+                sections,
             },
             {
                 preserveScroll: true,
@@ -74,15 +103,18 @@ export default function EvaluationPage({
 
     return (
         <>
-            <Head title="Evaluation & Recommendations" />
+            <Head title={t('Evaluation & Recommendations')} />
             <main className="grid w-full grid-cols-1 gap-4 p-4 sm:p-6 lg:px-[3.5%] lg:py-8">
                 <PageHeader
-                    title="Evaluation & Recommendations"
-                    description="Admin-editable weekly assessment for management review."
+                    title={t('Evaluation & Recommendations')}
+                    description={t(
+                        'Admin-editable weekly assessment for management review.',
+                    )}
                     actions={
                         week && (
-                            <span className="rounded-full bg-[#eeeeff] px-3 py-2 text-[10px] font-bold tracking-wider text-primary uppercase dark:bg-primary/20">
-                                Week of {week.label}
+                            <span className="hidden rounded-full bg-[#eeeeff] px-3 py-2 text-[10px] font-bold tracking-wider text-primary uppercase sm:inline-block dark:bg-primary/20">
+                                {t('Week of')}
+                                {t(week.label)}
                             </span>
                         )
                     }
@@ -90,10 +122,13 @@ export default function EvaluationPage({
 
                 {week === null ? (
                     <div className="rounded-xl border bg-card p-6">
-                        <p className="font-medium">No reporting week yet</p>
+                        <p className="font-medium">
+                            {t('No reporting week yet')}
+                        </p>
                         <p className="mt-1 text-sm text-muted-foreground">
-                            An evaluation is written for a reporting week. Add
-                            this month's weeks first.
+                            {t(
+                                "An evaluation is written for a reporting week. Add this month's weeks first.",
+                            )}
                         </p>
                     </div>
                 ) : (
@@ -103,7 +138,7 @@ export default function EvaluationPage({
                                 htmlFor="evaluation-week"
                                 className="text-xs"
                             >
-                                Reporting week
+                                {t('Reporting week')}
                             </Label>
                             <Select
                                 value={String(week.id)}
@@ -123,7 +158,7 @@ export default function EvaluationPage({
                                             key={item.id}
                                             value={String(item.id)}
                                         >
-                                            {item.label}
+                                            {t(item.label)}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
@@ -131,13 +166,26 @@ export default function EvaluationPage({
                         </div>
 
                         <Panel
-                            title="Management Evaluation & Recommendations"
+                            title={t('Management Evaluation & Recommendations')}
                             description={
                                 evaluation
-                                    ? `Prepared by ${evaluation.prepared_by} · last saved ${formatDateTime(evaluation.updated_at)}${evaluation.updated_by && evaluation.updated_by !== evaluation.prepared_by ? ` by ${evaluation.updated_by}` : ''}`
+                                    ? t('Prepared by :0 · last saved :1:2', {
+                                          '0': evaluation.prepared_by,
+                                          '1': formatDateTime(
+                                              evaluation.updated_at,
+                                          ),
+                                          '2':
+                                              evaluation.updated_by &&
+                                              evaluation.updated_by !==
+                                                  evaluation.prepared_by
+                                                  ? ` by ${evaluation.updated_by}`
+                                                  : '',
+                                      })
                                     : canEdit
-                                      ? 'Not written yet for this week.'
-                                      : 'The Admin has not written the evaluation for this week yet.'
+                                      ? t('Not written yet for this week.')
+                                      : t(
+                                            'The Admin has not written the evaluation for this week yet.',
+                                        )
                             }
                         >
                             {canEdit ? (
@@ -150,7 +198,7 @@ export default function EvaluationPage({
                                 >
                                     <FormField
                                         id="key-concerns"
-                                        label="Key issues & concerns"
+                                        label={t('Key issues & concerns')}
                                         error={errors.key_concerns}
                                     >
                                         <Textarea
@@ -169,7 +217,7 @@ export default function EvaluationPage({
                                     </FormField>
                                     <FormField
                                         id="assessment"
-                                        label="Evaluation"
+                                        label={t('Evaluation')}
                                         error={errors.evaluation}
                                     >
                                         <Textarea
@@ -191,11 +239,89 @@ export default function EvaluationPage({
                                         errors={errors}
                                         onChange={setRecommendations}
                                     />
+                                    <Collapsible
+                                        open={sectionsOpen}
+                                        onOpenChange={setSectionsOpen}
+                                        className="rounded-lg border bg-muted/20 p-4"
+                                    >
+                                        <CollapsibleTrigger asChild>
+                                            <button
+                                                type="button"
+                                                className="flex w-full items-center justify-between text-left text-sm font-medium"
+                                            >
+                                                <span>
+                                                    {t(
+                                                        'Detailed sections (optional,',
+                                                    )}{' '}
+                                                    {
+                                                        Object.values(
+                                                            sections,
+                                                        ).filter(
+                                                            (v) =>
+                                                                v.trim() !== '',
+                                                        ).length
+                                                    }{' '}
+                                                    {t('of')}
+                                                    {sectionOptions.length}{' '}
+                                                    {t('filled)')}
+                                                </span>
+                                                <ChevronDown
+                                                    className={`size-4 text-muted-foreground transition-transform ${
+                                                        sectionsOpen
+                                                            ? 'rotate-180'
+                                                            : ''
+                                                    }`}
+                                                />
+                                            </button>
+                                        </CollapsibleTrigger>
+                                        <CollapsibleContent className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+                                            {sectionOptions.map((opt) => (
+                                                <FormField
+                                                    key={opt.key}
+                                                    id={`section-${opt.key}`}
+                                                    label={t(opt.label)}
+                                                    error={
+                                                        errors[
+                                                            `sections.${opt.key}`
+                                                        ]
+                                                    }
+                                                >
+                                                    <Textarea
+                                                        {...fieldAria(
+                                                            `section-${opt.key}`,
+                                                            {
+                                                                error: errors[
+                                                                    `sections.${opt.key}`
+                                                                ],
+                                                            },
+                                                        )}
+                                                        rows={3}
+                                                        maxLength={5000}
+                                                        value={
+                                                            sections[opt.key] ??
+                                                            ''
+                                                        }
+                                                        onChange={(event) =>
+                                                            setSections(
+                                                                (prev) => ({
+                                                                    ...prev,
+                                                                    [opt.key]:
+                                                                        event
+                                                                            .target
+                                                                            .value,
+                                                                }),
+                                                            )
+                                                        }
+                                                    />
+                                                </FormField>
+                                            ))}
+                                        </CollapsibleContent>
+                                    </Collapsible>
                                     <div className="flex justify-end">
                                         <Button type="submit" disabled={saving}>
                                             {saving
-                                                ? 'Saving…'
-                                                : 'Save evaluation'}
+                                                ? t('Saving…')
+                                                : t('Save evaluation')}
                                         </Button>
                                     </div>
                                 </form>
@@ -204,30 +330,32 @@ export default function EvaluationPage({
                                     <div className="space-y-5 text-sm">
                                         <section>
                                             <h3 className="font-semibold">
-                                                Key issues & concerns
+                                                {t('Key issues & concerns')}
                                             </h3>
                                             <p className="mt-1 whitespace-pre-line text-muted-foreground">
                                                 {evaluation.key_concerns ??
-                                                    'None recorded.'}
+                                                    t('None recorded.')}
                                             </p>
                                         </section>
                                         <section>
                                             <h3 className="font-semibold">
-                                                Evaluation
+                                                {t('Evaluation')}
                                             </h3>
                                             <p className="mt-1 whitespace-pre-line text-muted-foreground">
                                                 {evaluation.evaluation ??
-                                                    'None recorded.'}
+                                                    t('None recorded.')}
                                             </p>
                                         </section>
                                         <section>
                                             <h3 className="font-semibold">
-                                                Management recommendations
+                                                {t(
+                                                    'Management recommendations',
+                                                )}
                                             </h3>
                                             {evaluation.recommendations
                                                 .length === 0 ? (
                                                 <p className="mt-1 text-muted-foreground">
-                                                    None recorded.
+                                                    {t('None recorded.')}
                                                 </p>
                                             ) : (
                                                 <ol className="mt-1 list-decimal space-y-1 pl-5">
@@ -244,6 +372,54 @@ export default function EvaluationPage({
                                                 </ol>
                                             )}
                                         </section>
+                                        {sectionOptions.some(
+                                            (opt) =>
+                                                (
+                                                    evaluation.sections?.[
+                                                        opt.key
+                                                    ] ?? ''
+                                                ).trim() !== '',
+                                        ) && (
+                                            <section className="space-y-3 border-t pt-4">
+                                                <h3 className="font-semibold">
+                                                    {t('Detailed sections')}
+                                                </h3>
+                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                                    {sectionOptions.map(
+                                                        (opt) => {
+                                                            const text =
+                                                                evaluation
+                                                                    .sections?.[
+                                                                    opt.key
+                                                                ];
+                                                            if (
+                                                                !text ||
+                                                                text.trim() ===
+                                                                    ''
+                                                            ) {
+                                                                return null;
+                                                            }
+                                                            return (
+                                                                <div
+                                                                    key={
+                                                                        opt.key
+                                                                    }
+                                                                >
+                                                                    <h4 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
+                                                                        {t(
+                                                                            opt.label,
+                                                                        )}
+                                                                    </h4>
+                                                                    <p className="mt-1 whitespace-pre-line">
+                                                                        {text}
+                                                                    </p>
+                                                                </div>
+                                                            );
+                                                        },
+                                                    )}
+                                                </div>
+                                            </section>
+                                        )}
                                     </div>
                                 )
                             )}

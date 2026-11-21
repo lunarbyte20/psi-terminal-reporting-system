@@ -2,25 +2,33 @@
 
 namespace App\Modules\Issues\Models;
 
+use App\Modules\Issues\Enums\IssuePriority;
 use App\Modules\Issues\Enums\IssueStatus;
 use App\Modules\Reporting\Models\ReportingWeek;
 use App\Modules\Terminals\Models\Supervisor;
 use App\Modules\Terminals\Models\Terminal;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 /**
  * An operational concern and the action taken on it.
  *
+ * @property-read Collection<int, IssueTag> $tags
  * @property int $id
  * @property string $key_issue
  * @property string|null $action_plan
+ * @property string|null $actions_taken
+ * @property string|null $results
  * @property string|null $responsible_person
  * @property string|null $department
  * @property CarbonImmutable|null $target_date
+ * @property CarbonImmutable|null $reported_on
  * @property IssueStatus $status
+ * @property IssuePriority $priority
  * @property bool $requires_ceo_decision
  * @property string|null $remarks
  * @property int|null $terminal_id
@@ -37,6 +45,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class OperationalIssue extends Model
 {
     protected $guarded = ['id'];
+
+    /** @return BelongsToMany<IssueTag, $this> */
+    public function tags(): BelongsToMany
+    {
+        return $this->belongsToMany(IssueTag::class);
+    }
 
     /** @return BelongsTo<Terminal, $this> */
     public function terminal(): BelongsTo
@@ -98,7 +112,9 @@ class OperationalIssue extends Model
     {
         return [
             'status' => IssueStatus::class,
+            'priority' => IssuePriority::class,
             'target_date' => 'immutable_date',
+            'reported_on' => 'immutable_date',
             'requires_ceo_decision' => 'boolean',
             'completed_at' => 'immutable_datetime',
             'created_at' => 'immutable_datetime',

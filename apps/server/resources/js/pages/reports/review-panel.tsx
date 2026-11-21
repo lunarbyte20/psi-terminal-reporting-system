@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Form } from '@inertiajs/react';
 import { useState } from 'react';
 import { fieldAria, FormField } from '@/components/form-field';
@@ -15,6 +16,7 @@ export function ReviewPanel({
     reportId: number;
     mode: 'review' | 'reopen';
 }) {
+    useLocale();
     const [returning, setReturning] = useState(mode === 'reopen');
 
     return (
@@ -25,13 +27,17 @@ export function ReviewPanel({
             <div className="space-y-1">
                 <h2 id="review-heading" className="text-base font-semibold">
                     {mode === 'review'
-                        ? 'Your review'
-                        : 'Correct an approved report'}
+                        ? t('Your review')
+                        : t('Correct an approved report')}
                 </h2>
                 <p className="text-sm text-muted-foreground">
                     {mode === 'review'
-                        ? 'Approve if the figures are complete. Return it if the supervisor needs to fix something.'
-                        : 'Reopening sends the report back to the supervisor and removes it from totals until it is approved again.'}
+                        ? t(
+                              'Approve if the figures are complete. Return it if the supervisor needs to fix something.',
+                          )
+                        : t(
+                              'Reopening sends the report back to the supervisor and removes it from totals until it is approved again.',
+                          )}
                 </p>
             </div>
 
@@ -52,7 +58,7 @@ export function ReviewPanel({
                                 variant="remove"
                                 onClick={() => setReturning(true)}
                             >
-                                Return for correction
+                                {t('Return for correction')}
                             </Button>
                             <input
                                 type="hidden"
@@ -60,7 +66,9 @@ export function ReviewPanel({
                                 value="approve"
                             />
                             <Button type="submit" disabled={processing}>
-                                {processing ? 'Approving…' : 'Approve report'}
+                                {processing
+                                    ? t('Approving…')
+                                    : t('Approve report')}
                             </Button>
                         </div>
                     )}
@@ -82,9 +90,11 @@ export function ReviewPanel({
                             />
                             <FormField
                                 id="reason"
-                                label="What needs to be corrected?"
+                                label={t('What needs to be corrected?')}
                                 required
-                                hint="The supervisor sees this note on the report."
+                                hint={t(
+                                    'The supervisor sees this note on the report.',
+                                )}
                                 error={errors.reason ?? errors.review}
                             >
                                 <Textarea
@@ -107,7 +117,7 @@ export function ReviewPanel({
                                         onClick={() => setReturning(false)}
                                         disabled={processing}
                                     >
-                                        Cancel
+                                        {t('Cancel')}
                                     </Button>
                                 )}
                                 <Button
@@ -116,10 +126,10 @@ export function ReviewPanel({
                                     disabled={processing}
                                 >
                                     {processing
-                                        ? 'Sending…'
+                                        ? t('Sending…')
                                         : mode === 'reopen'
-                                          ? 'Reopen for correction'
-                                          : 'Return to supervisor'}
+                                          ? t('Reopen for correction')
+                                          : t('Return to supervisor')}
                                 </Button>
                             </div>
                         </>

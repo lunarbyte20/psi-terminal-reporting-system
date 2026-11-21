@@ -83,4 +83,36 @@ class ManagementEvaluationTest extends TestCase
         $this->actingAs($admin)->put(route('evaluation.update', $this->week), ['recommendations' => [str_repeat('a', 1001)]])
             ->assertSessionHasErrors(['recommendations.0' => 'Keep each recommendation under 1,000 characters.']);
     }
+
+    public function test_detailed_sections_are_saved_blank_ones_dropped_and_unknown_keys_rejected(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+
+        $this->actingAs($admin)->put(route('evaluation.update', $this->week), [
+            'sections' => [
+                'operational' => 'Dispatchers covered peak hours.',
+                'financial' => '   ',
+                'ceo_decisions' => 'Approve PITX booth repair.',
+            ],
+        ])->assertRedirect(route('evaluation.show', ['week' => $this->week->id]));
+
+        $record = ManagementEvaluation::query()->sole();
+        $this->assertSame([
+            'operational' => 'Dispatchers covered peak hours.',
+            'ceo_decisions' => 'Approve PITX booth repair.',
+        ], $record->sections);
+
+        $ceo = $this->userWithRole(Role::Ceo);
+        $this->actingAs($ceo)->get(route('evaluation.show', ['week' => $this->week->id]))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('evaluation.sections', [
+                    'operational' => 'Dispatchers covered peak hours.',
+                    'ceo_decisions' => 'Approve PITX booth repair.',
+                ])
+                ->has('sectionOptions', 10));
+
+        $this->actingAs($admin)->put(route('evaluation.update', $this->week), [
+            'sections' => ['nonexistent_section' => 'Nope'],
+        ])->assertSessionHasErrors(['sections']);
+    }
 }

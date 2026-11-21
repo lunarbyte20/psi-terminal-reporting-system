@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Head, Link } from '@inertiajs/react';
 import { Pencil } from 'lucide-react';
 import Heading from '@/components/heading';
@@ -29,6 +30,7 @@ export default function ReportShow({
     can: { update: boolean; review: boolean; reopen: boolean };
     categories: SalesCategory[];
 }) {
+    useLocale();
     const returnNote =
         report.status === 'returned'
             ? report.history.find((entry) => entry.comment)
@@ -40,14 +42,18 @@ export default function ReportShow({
     return (
         <>
             <Head title={`${report.terminal.name} · ${report.week.label}`} />
-            <main className="grid w-full grid-cols-1 gap-6 p-6">
+            <main className="grid w-full grid-cols-1 gap-4 p-4 sm:gap-6 sm:p-6">
                 <Heading
                     title={report.terminal.name}
-                    description={`Week of ${report.week.label} · due ${formatDate(report.week.due_on)}${report.supervisor ? ` · ${report.supervisor}` : ''}`}
+                    description={t('Week of :0 · due :1:2', {
+                        '0': report.week.label,
+                        '1': formatDate(report.week.due_on),
+                        '2': report.supervisor ? ` · ${report.supervisor}` : '',
+                    })}
                     badge={<ReportStatusBadge status={report.status} />}
                     back={{
                         href: `/reports?week=${report.week.id}`,
-                        label: 'Back to weekly reports',
+                        label: t('Back to weekly reports'),
                     }}
                 />
 
@@ -56,7 +62,9 @@ export default function ReportShow({
                         role="status"
                         className="rounded-lg border border-status-danger-border bg-status-danger-bg p-4 text-status-danger-fg"
                     >
-                        <p className="font-semibold">Returned for correction</p>
+                        <p className="font-semibold">
+                            {t('Returned for correction')}
+                        </p>
                         <p className="mt-1 text-sm whitespace-pre-line">
                             {returnNote.comment}
                         </p>
@@ -69,8 +77,8 @@ export default function ReportShow({
                             <Link href={`/reports/${report.id}/edit`}>
                                 <Pencil aria-hidden="true" />
                                 {report.status === 'returned'
-                                    ? 'Fix and resubmit'
-                                    : 'Edit report'}
+                                    ? t('Fix and resubmit')
+                                    : t('Edit report')}
                             </Link>
                         </Button>
                     </div>
@@ -89,7 +97,7 @@ export default function ReportShow({
                             id="sales-heading"
                             className="text-base font-semibold"
                         >
-                            Sales
+                            {t('Sales')}
                         </h2>
                         <dl className="mt-3 divide-y">
                             {categories.map((category) => (
@@ -98,7 +106,7 @@ export default function ReportShow({
                                     className="flex justify-between gap-4 py-2 text-sm"
                                 >
                                     <dt className="text-muted-foreground">
-                                        {category.label}
+                                        {t(category.label)}
                                     </dt>
                                     <dd className="tabular-nums">
                                         {formatPeso(report.sales[category.key])}
@@ -106,7 +114,7 @@ export default function ReportShow({
                                 </div>
                             ))}
                             <div className="flex justify-between gap-4 pt-3 font-semibold">
-                                <dt>Total sales</dt>
+                                <dt>{t('Total sales')}</dt>
                                 <dd className="tabular-nums">
                                     {formatPeso(report.total_sales)}
                                 </dd>
@@ -122,11 +130,11 @@ export default function ReportShow({
                             id="ridership-heading"
                             className="text-base font-semibold"
                         >
-                            Ridership
+                            {t('Ridership')}
                         </h2>
                         {ridership.length === 0 ? (
                             <p className="mt-3 text-sm text-muted-foreground">
-                                No ridership recorded.
+                                {t('No ridership recorded.')}
                             </p>
                         ) : (
                             <div className="mt-3 overflow-x-auto">
@@ -134,16 +142,21 @@ export default function ReportShow({
                                     <thead className="text-left text-muted-foreground">
                                         <tr>
                                             <th className="py-2 font-medium">
-                                                Vehicle type
+                                                {t('Vehicle type')}
                                             </th>
                                             <th className="py-2 text-right font-medium">
-                                                Passengers per trip
+                                                <span className="sm:hidden">
+                                                    {t('Pax/trip')}
+                                                </span>
+                                                <span className="hidden sm:inline">
+                                                    {t('Number of passengers')}
+                                                </span>
                                             </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Trips
+                                            <th className="py-2 pl-3 text-right font-medium">
+                                                {t('Trips')}
                                             </th>
-                                            <th className="py-2 text-right font-medium">
-                                                Ridership
+                                            <th className="py-2 pl-3 text-right font-medium">
+                                                {t('Ridership')}
                                             </th>
                                         </tr>
                                     </thead>
@@ -170,7 +183,7 @@ export default function ReportShow({
                                     <tfoot>
                                         <tr className="font-semibold">
                                             <td className="pt-3" colSpan={3}>
-                                                Total ridership
+                                                {t('Total ridership')}
                                             </td>
                                             <td className="pt-3 text-right tabular-nums">
                                                 {formatCount(
@@ -198,7 +211,9 @@ export default function ReportShow({
 
                 {report.remarks && (
                     <section className="rounded-lg border bg-card p-5 sm:p-6">
-                        <h2 className="text-base font-semibold">Remarks</h2>
+                        <h2 className="text-base font-semibold">
+                            {t('Remarks')}
+                        </h2>
                         <p className="mt-2 text-sm whitespace-pre-line">
                             {report.remarks}
                         </p>
@@ -217,7 +232,7 @@ export default function ReportShow({
                         id="history-heading"
                         className="text-base font-semibold"
                     >
-                        History
+                        {t('History')}
                     </h2>
                     <ol className="mt-3 space-y-3">
                         {report.history.map((entry) => (
@@ -227,8 +242,8 @@ export default function ReportShow({
                                         {entry.to_status}
                                     </span>{' '}
                                     <span className="text-muted-foreground">
-                                        by {entry.by} ·{' '}
-                                        {formatDateTime(entry.at)}
+                                        {t('by')}
+                                        {entry.by} · {formatDateTime(entry.at)}
                                     </span>
                                 </p>
                                 {entry.comment && (

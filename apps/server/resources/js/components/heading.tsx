@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import type { ReactNode } from 'react';
 import BackLink from '@/components/back-link';
 
@@ -14,13 +15,17 @@ export default function Heading({
     variant?: 'default' | 'small';
     back?: { href: string; label: string };
 }) {
+    useLocale();
     const TitleTag = variant === 'small' ? 'h2' : 'h1';
 
     return (
         <header className={variant === 'small' ? '' : 'space-y-1.5'}>
             <div
                 className={
-                    back ? 'flex items-start justify-between gap-3' : undefined
+                    // Phones: the back link sits above the title so a long name keeps the full width.
+                    back
+                        ? 'flex flex-col-reverse items-start gap-3 sm:flex-row sm:justify-between'
+                        : undefined
                 }
             >
                 <div className="flex flex-wrap items-center gap-3">
@@ -38,7 +43,9 @@ export default function Heading({
                 {back && <BackLink {...back} />}
             </div>
             {description && (
-                <p className="text-sm text-muted-foreground">{description}</p>
+                <p className="text-sm text-muted-foreground">
+                    {t(description)}
+                </p>
             )}
         </header>
     );

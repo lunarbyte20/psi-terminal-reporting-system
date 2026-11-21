@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Form, Head } from '@inertiajs/react';
 import { useState } from 'react';
 import Heading from '@/components/heading';
@@ -8,14 +9,8 @@ import {
     FormSection,
     RequiredLegend,
 } from '@/components/form-field';
+import { SearchableSelect } from '@/components/searchable-select';
 import { Input } from '@/components/ui/input';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import type { NamedRecord } from '@/types';
 
 type TerminalForm = {
@@ -30,30 +25,37 @@ const UNASSIGNED = 'none';
 export default function TerminalFormPage({
     terminal,
     supervisors,
+    returnTo,
 }: {
     terminal: TerminalForm | null;
     supervisors: NamedRecord[];
+    returnTo?: string;
 }) {
+    useLocale();
     const [supervisorId, setSupervisorId] = useState(
         terminal?.supervisor_id ? String(terminal.supervisor_id) : UNASSIGNED,
     );
-    const backHref = terminal
-        ? `/admin/terminals/${terminal.id}`
-        : '/admin/terminals';
-    const title = terminal ? `Edit ${terminal.name}` : 'Add terminal';
+    // Back, Cancel and Save return to where Edit was clicked (the list with its filters, or the detail page).
+    const backHref =
+        returnTo ??
+        (terminal ? `/admin/terminals/${terminal.id}` : '/admin/terminals');
+    const backToList = backHref.split('?')[0] === '/admin/terminals';
+    const title = terminal ? `Edit ${terminal.name}` : t('Add terminal');
 
     return (
         <>
-            <Head title={title} />
+            <Head title={t(title)} />
             <main className="grid w-full grid-cols-1 gap-6 p-4 pb-32 sm:p-6 sm:pb-32">
                 <Heading
-                    title={title}
-                    description="The terminal's name appears on reports and the dashboard."
+                    title={t(title)}
+                    description={t(
+                        "The terminal's name appears on reports and the dashboard.",
+                    )}
                     back={{
                         href: backHref,
-                        label: terminal
-                            ? 'Back to terminal'
-                            : 'Back to terminals',
+                        label: backToList
+                            ? t('Back to terminals')
+                            : t('Back to terminal'),
                     }}
                 />
                 <Form
@@ -68,11 +70,18 @@ export default function TerminalFormPage({
                 >
                     {({ errors, processing }) => (
                         <>
+                            {returnTo && (
+                                <input
+                                    type="hidden"
+                                    name="return_to"
+                                    value={returnTo}
+                                />
+                            )}
                             <RequiredLegend />
-                            <FormSection title="Terminal details">
+                            <FormSection title={t('Terminal details')}>
                                 <FormField
                                     id="name"
-                                    label="Terminal name"
+                                    label={t('Terminal name')}
                                     required
                                     error={errors.name}
                                 >
@@ -89,8 +98,10 @@ export default function TerminalFormPage({
                                 </FormField>
                                 <FormField
                                     id="location"
-                                    label="Location"
-                                    hint="For example the city or province."
+                                    label={t('Location')}
+                                    hint={t(
+                                        'For example the city or province.',
+                                    )}
                                     error={errors.location}
                                 >
                                     <Input
@@ -105,39 +116,34 @@ export default function TerminalFormPage({
                                 </FormField>
                                 <FormField
                                     id="supervisor_id"
-                                    label="Supervisor"
-                                    hint="The supervisor who encodes this terminal's weekly report. Past reports keep their original supervisor."
+                                    label={t('Supervisor')}
+                                    hint={t(
+                                        "The supervisor who encodes this terminal's weekly report. Past reports keep their original supervisor.",
+                                    )}
                                     error={errors.supervisor_id}
                                 >
-                                    <Select
+                                    <SearchableSelect
+                                        id="supervisor_id"
                                         value={supervisorId}
-                                        onValueChange={setSupervisorId}
-                                    >
-                                        <SelectTrigger
-                                            {...fieldAria('supervisor_id', {
-                                                hint: true,
-                                                error: errors.supervisor_id,
-                                            })}
-                                            className="w-full"
-                                        >
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value={UNASSIGNED}>
-                                                Not assigned yet
-                                            </SelectItem>
-                                            {supervisors.map((supervisor) => (
-                                                <SelectItem
-                                                    key={supervisor.id}
-                                                    value={String(
+                                        onChange={setSupervisorId}
+                                        options={[
+                                            {
+                                                value: UNASSIGNED,
+                                                label: t('Not assigned yet'),
+                                            },
+                                            ...supervisors.map(
+                                                (supervisor) => ({
+                                                    value: String(
                                                         supervisor.id,
-                                                    )}
-                                                >
-                                                    {supervisor.name}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
+                                                    ),
+                                                    label: supervisor.name,
+                                                }),
+                                            ),
+                                        ]}
+                                        searchPlaceholder="Search supervisors"
+                                        invalid={Boolean(errors.supervisor_id)}
+                                        describedBy="supervisor_id-hint"
+                                    />
                                     <input
                                         type="hidden"
                                         name="supervisor_id"
@@ -153,7 +159,9 @@ export default function TerminalFormPage({
                                 fixed
                                 cancelHref={backHref}
                                 submitLabel={
-                                    terminal ? 'Save changes' : 'Add terminal'
+                                    terminal
+                                        ? t('Save changes')
+                                        : t('Add terminal')
                                 }
                                 processing={processing}
                             />

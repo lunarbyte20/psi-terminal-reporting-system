@@ -79,7 +79,7 @@ class MasterDataTest extends TestCase
         $admin = $this->userWithRole(Role::Admin);
         $this->vehicleType('BUS');
 
-        $this->actingAs($admin)->post(route('admin.vehicle-types.store'), ['name' => 'BUS', 'sort_order' => 5])
+        $this->actingAs($admin)->post(route('admin.vehicle-types.store'), ['name' => 'BUS', 'number_of_passengers' => 5])
             ->assertSessionHasErrors(['name' => 'This vehicle type already exists.']);
     }
 

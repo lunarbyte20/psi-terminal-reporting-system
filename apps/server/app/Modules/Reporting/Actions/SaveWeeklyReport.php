@@ -33,7 +33,7 @@ class SaveWeeklyReport
         return DB::transaction(function () use ($actor, $report, $input, $intent): WeeklyReport {
             $report = WeeklyReport::query()->whereKey($report->id)->lockForUpdate()->firstOrFail();
             if ($report->status === ReportStatus::Approved) {
-                throw ValidationException::withMessages(['report' => 'This report is approved. Ask the Admin to reopen it for correction.']);
+                throw ValidationException::withMessages(['report' => __('This report is approved. Ask the Admin to reopen it for correction.')]);
             }
 
             $before = $this->figures($report);
@@ -78,7 +78,7 @@ class SaveWeeklyReport
         $lines = array_values(array_filter($lines, fn (array $line) => $line['trips'] > 0 || $line['passengers_per_trip'] > 0));
         $vehicleTypeIds = array_column($lines, 'vehicle_type_id');
         if (count($vehicleTypeIds) !== count(array_unique($vehicleTypeIds))) {
-            throw ValidationException::withMessages(['ridership' => 'Each vehicle type can appear only once.']);
+            throw ValidationException::withMessages(['ridership' => __('Each vehicle type can appear only once.')]);
         }
 
         $known = VehicleType::query()->whereIn('id', $vehicleTypeIds)
@@ -86,7 +86,7 @@ class SaveWeeklyReport
                 ->orWhereIn('id', $report->ridershipLines()->select('vehicle_type_id')))
             ->pluck('id')->all();
         if (count($known) !== count($vehicleTypeIds)) {
-            throw ValidationException::withMessages(['ridership' => 'One of the vehicle types is no longer available. Reload the page and try again.']);
+            throw ValidationException::withMessages(['ridership' => __('One of the vehicle types is no longer available. Reload the page and try again.')]);
         }
 
         $report->ridershipLines()->delete();

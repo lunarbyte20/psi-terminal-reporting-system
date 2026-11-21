@@ -3,9 +3,12 @@
 namespace App\Modules\Issues\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use App\Modules\Accounts\Enums\Role;
 use App\Modules\Issues\Actions\DeleteIssue;
+use App\Modules\Issues\Actions\GetIssueList;
 use App\Modules\Issues\Actions\SaveIssue;
+use App\Modules\Issues\Enums\IssuePriority;
 use App\Modules\Issues\Enums\IssueStatus;
 use App\Modules\Issues\Http\Requests\ListIssuesRequest;
 use App\Modules\Issues\Http\Requests\SaveIssueRequest;
@@ -18,6 +21,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
+use Spatie\Activitylog\Models\Activity;
 
 class IssueController extends Controller
 {
@@ -28,22 +32,7 @@ class IssueController extends Controller
         $scope = $user->hasRoleOf(Role::Supervisor) ? ($user->supervisor->id ?? 0) : null;
         $search = addcslashes($filters['q'], '%_\\');
 
-        $issues = OperationalIssue::query()
-            ->visibleTo($scope)
-            ->with(['terminal:id,name,supervisor_id,archived_at', 'supervisor:id,name', 'reportingWeek'])
-            ->when($filters['status'] === 'open', fn (Builder $query) => $query->open())
-            ->when(IssueStatus::tryFrom($filters['status']) !== null, fn (Builder $query) => $query->where('status', $filters['status']))
-            ->when($filters['ceo'], fn (Builder $query) => $query->where('requires_ceo_decision', true))
-            ->when($filters['overdue'], fn (Builder $query) => $query->overdue())
-            ->when($filters['terminal'] !== null, fn (Builder $query) => $query->where('terminal_id', $filters['terminal']))
-            ->when($filters['q'] !== '', fn (Builder $query) => $query->where(fn (Builder $inner) => $inner
-                ->where('key_issue', 'like', "%{$search}%")
-                ->orWhere('action_plan', 'like', "%{$search}%")
-                ->orWhere('responsible_person', 'like', "%{$search}%")))
-            ->orderByRaw("case when status = 'completed' then 1 else 0 end")
-            ->orderByRaw('target_date is null')
-            ->orderBy('target_date')
-            ->orderByDesc('id')
+        $issues = app(GetIssueList::class)->query($user, $filters)
             ->paginate(25)->withQueryString()
             ->through(fn (OperationalIssue $issue) => [
                 ...IssuePresenter::present($issue),
@@ -55,6 +44,7 @@ class IssueController extends Controller
             'filters' => $filters,
             'issues' => $issues,
             'statuses' => IssueStatus::options(),
+            'priorities' => IssuePriority::options(),
             // Supervisors may only raise issues for their own terminals.
             'terminals' => Terminal::query()->active()
                 ->when(! $isAdmin, fn (Builder $query) => $query->where('supervisor_id', $scope ?? 0))
@@ -67,10 +57,36 @@ class IssueController extends Controller
         ]);
     }
 
+    /** One issue with every field and its full change history from the audit trail. */
+    public function show(OperationalIssue $issue): Response
+    {
+        $user = request()->user();
+        $scope = $user->hasRoleOf(Role::Supervisor) ? ($user->supervisor->id ?? 0) : null;
+        abort_unless(OperationalIssue::query()->visibleTo($scope)->whereKey($issue->id)->exists(), 403);
+        $issue->load(['tags', 'terminal:id,name,supervisor_id,archived_at', 'supervisor:id,name', 'reportingWeek']);
+
+        return Inertia::render('issues/show', [
+            'issue' => [...IssuePresenter::present($issue), 'can_edit' => Gate::allows('update-issue', $issue)],
+            'history' => Activity::query()
+                ->where('subject_type', $issue->getMorphClass())->where('subject_id', $issue->id)
+                ->with('causer')->latest('id')->limit(100)->get()
+                ->map(fn (Activity $entry) => [
+                    'id' => $entry->id,
+                    'at' => $entry->created_at?->toIso8601String(),
+                    'user' => $entry->causer instanceof User ? $entry->causer->name : 'System',
+                    'action' => $entry->description,
+                    'before' => $entry->properties->get('before'),
+                    'after' => $entry->properties->get('after'),
+                ])->values(),
+            'statuses' => IssueStatus::options(),
+            'priorities' => IssuePriority::options(),
+        ]);
+    }
+
     public function store(SaveIssueRequest $request, SaveIssue $action): RedirectResponse
     {
         $action->execute($request->user(), null, $request->toInput());
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Issue added. It stays open until marked Completed.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Issue added. It stays open until marked Completed.')]);
 
         return back();
     }
@@ -78,7 +94,7 @@ class IssueController extends Controller
     public function update(SaveIssueRequest $request, OperationalIssue $issue, SaveIssue $action): RedirectResponse
     {
         $action->execute($request->user(), $issue, $request->toInput());
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Issue changes saved.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Issue changes saved.')]);
 
         return back();
     }
@@ -87,7 +103,7 @@ class IssueController extends Controller
     {
         Gate::authorize('delete-issue');
         $action->execute(request()->user(), $issue);
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Issue deleted. A copy is kept in the audit log.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Issue deleted. A copy is kept in the audit log.')]);
 
         return back();
     }

@@ -1,4 +1,6 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Head, Link } from '@inertiajs/react';
+import { OneTimePassword } from '@/components/one-time-password';
 import { Eye, Pencil } from 'lucide-react';
 import { ArchiveControl } from '@/components/archive-control';
 import Heading from '@/components/heading';
@@ -24,7 +26,9 @@ type TerminalItem = {
 export default function SupervisorShow({
     supervisor,
     terminals,
+    temporaryPassword,
 }: {
+    temporaryPassword: string | null;
     supervisor: {
         id: number;
         name: string;
@@ -34,6 +38,7 @@ export default function SupervisorShow({
     };
     terminals: TerminalItem[];
 }) {
+    useLocale();
     return (
         <>
             <Head title={supervisor.name} />
@@ -42,29 +47,37 @@ export default function SupervisorShow({
                     title={supervisor.name}
                     badge={
                         <StatusBadge
-                            label={supervisor.archived ? 'Archived' : 'Active'}
+                            label={
+                                supervisor.archived
+                                    ? t('Archived')
+                                    : t('Active')
+                            }
                             tone={supervisor.archived ? 'neutral' : 'success'}
                         />
                     }
                     back={{
                         href: '/admin/supervisors',
-                        label: 'Back to supervisors',
+                        label: t('Back to supervisors'),
                     }}
                 />
+
+                {temporaryPassword && (
+                    <OneTimePassword password={temporaryPassword} />
+                )}
 
                 <section className="rounded-lg border bg-card p-5 sm:p-6">
                     <dl className="grid gap-4 sm:grid-cols-2">
                         <div>
                             <dt className="text-sm text-muted-foreground">
-                                Mobile number
+                                {t('Mobile number')}
                             </dt>
                             <dd className="font-medium">
-                                {supervisor.phone ?? 'Not recorded'}
+                                {supervisor.phone ?? t('Not recorded')}
                             </dd>
                         </div>
                         <div>
                             <dt className="text-sm text-muted-foreground">
-                                Sign-in account
+                                {t('Sign-in account')}
                             </dt>
                             <dd className="font-medium">
                                 {supervisor.account ? (
@@ -76,12 +89,12 @@ export default function SupervisorShow({
                                     </Link>
                                 ) : (
                                     <>
-                                        No account yet.{' '}
+                                        {t('No account yet.')}{' '}
                                         <Link
                                             className="underline underline-offset-4"
-                                            href="/admin/users/create"
+                                            href={`/admin/supervisors/${supervisor.id}/edit`}
                                         >
-                                            Create one
+                                            {t('Create one')}
                                         </Link>
                                     </>
                                 )}
@@ -92,21 +105,22 @@ export default function SupervisorShow({
 
                 <section className="space-y-3">
                     <h2 className="text-lg font-semibold">
-                        Assigned terminals
+                        {t('Assigned terminals')}
                     </h2>
                     {terminals.length === 0 ? (
                         <p className="rounded-lg border bg-card p-5 text-sm text-muted-foreground">
-                            No terminals are assigned. Edit a terminal and
-                            choose this supervisor.
+                            {t(
+                                'No terminals are assigned. Edit a terminal and choose this supervisor.',
+                            )}
                         </p>
                     ) : (
                         <div className="overflow-x-auto rounded-lg border bg-card">
                             <Table>
                                 <TableHeader>
                                     <TableRow>
-                                        <TableHead>Terminal</TableHead>
-                                        <TableHead>Status</TableHead>
-                                        <TableHead>ACTION</TableHead>
+                                        <TableHead>{t('Terminal')}</TableHead>
+                                        <TableHead>{t('Status')}</TableHead>
+                                        <TableHead>{t('ACTION')}</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
@@ -119,8 +133,8 @@ export default function SupervisorShow({
                                                 <StatusBadge
                                                     label={
                                                         terminal.archived_at
-                                                            ? 'Archived'
-                                                            : 'Active'
+                                                            ? t('Archived')
+                                                            : t('Active')
                                                     }
                                                     tone={
                                                         terminal.archived_at
@@ -134,7 +148,9 @@ export default function SupervisorShow({
                                                     href={`/admin/terminals/${terminal.id}`}
                                                     icon={Eye}
                                                     tone="view"
-                                                    label={`View ${terminal.name}`}
+                                                    label={t('View :0', {
+                                                        '0': terminal.name,
+                                                    })}
                                                 />
                                             </TableCell>
                                         </TableRow>
@@ -151,12 +167,14 @@ export default function SupervisorShow({
                         action={`/admin/supervisors/${supervisor.id}/archive`}
                         name={supervisor.name}
                         archived={supervisor.archived}
-                        consequence="They will no longer be offered for terminal assignments. Reports they filed keep their name."
+                        consequence={t(
+                            'They will no longer be offered for terminal assignments. Reports they filed keep their name.',
+                        )}
                     />
                     <Button variant="edit" asChild>
                         <Link href={`/admin/supervisors/${supervisor.id}/edit`}>
                             <Pencil aria-hidden="true" />
-                            Edit supervisor
+                            {t('Edit supervisor')}
                         </Link>
                     </Button>
                 </div>

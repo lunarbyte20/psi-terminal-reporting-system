@@ -22,7 +22,7 @@ class ReviewWeeklyReport
     {
         $reason = $reason === null ? null : trim($reason);
         if ($decision->requiresReason() && ($reason === null || $reason === '')) {
-            throw ValidationException::withMessages(['reason' => 'Explain what needs to be corrected.']);
+            throw ValidationException::withMessages(['reason' => __('Explain what needs to be corrected.')]);
         }
 
         DB::transaction(function () use ($actor, $report, $decision, $reason): void {

@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Form } from '@inertiajs/react';
 import { Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
@@ -16,13 +17,18 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 
-export type VehicleTypeItem = { id: number; name: string; sort_order: number };
+export type VehicleTypeItem = {
+    id: number;
+    name: string;
+    number_of_passengers: number | null;
+};
 
 export function VehicleTypeDialog({
     vehicleType,
 }: {
     vehicleType?: VehicleTypeItem;
 }) {
+    useLocale();
     const [open, setOpen] = useState(false);
     const editing = vehicleType !== undefined;
 
@@ -32,7 +38,7 @@ export function VehicleTypeDialog({
                 <RowAction
                     icon={Pencil}
                     tone="edit"
-                    label={`Edit ${vehicleType.name}`}
+                    label={t('Edit :0', { '0': vehicleType.name })}
                     trigger={(button) => (
                         <DialogTrigger asChild>{button}</DialogTrigger>
                     )}
@@ -41,7 +47,7 @@ export function VehicleTypeDialog({
                 <DialogTrigger asChild>
                     <Button>
                         <Plus aria-hidden="true" />
-                        Add vehicle type
+                        {t('Add vehicle type')}
                     </Button>
                 </DialogTrigger>
             )}
@@ -50,10 +56,12 @@ export function VehicleTypeDialog({
                     <DialogTitle>
                         {editing
                             ? `Edit ${vehicleType.name}`
-                            : 'Add vehicle type'}
+                            : t('Add vehicle type')}
                     </DialogTitle>
                     <DialogDescription>
-                        Supervisors see this as a row in the ridership form.
+                        {t(
+                            'Supervisors see this as a row in the ridership form.',
+                        )}
                     </DialogDescription>
                 </DialogHeader>
                 <Form
@@ -72,7 +80,7 @@ export function VehicleTypeDialog({
                         <>
                             <FormField
                                 id="vehicle-name"
-                                label="Name"
+                                label={t('Name')}
                                 required
                                 error={errors.name}
                             >
@@ -87,25 +95,27 @@ export function VehicleTypeDialog({
                                 />
                             </FormField>
                             <FormField
-                                id="vehicle-order"
-                                label="Display order"
+                                id="vehicle-passengers"
+                                label={t('Number of passengers')}
                                 required
-                                hint="Lower numbers appear first."
-                                error={errors.sort_order}
+                                hint={t(
+                                    'Default passengers per trip for new ridership entries.',
+                                )}
+                                error={errors.number_of_passengers}
                             >
                                 <Input
-                                    {...fieldAria('vehicle-order', {
+                                    {...fieldAria('vehicle-passengers', {
                                         required: true,
                                         hint: true,
-                                        error: errors.sort_order,
+                                        error: errors.number_of_passengers,
                                     })}
-                                    name="sort_order"
+                                    name="number_of_passengers"
                                     type="number"
                                     inputMode="numeric"
                                     min={0}
-                                    max={999}
+                                    max={500}
                                     defaultValue={
-                                        vehicleType?.sort_order ?? 100
+                                        vehicleType?.number_of_passengers ?? 0
                                     }
                                 />
                             </FormField>
@@ -116,15 +126,15 @@ export function VehicleTypeDialog({
                                         variant="outline"
                                         disabled={processing}
                                     >
-                                        Cancel
+                                        {t('Cancel')}
                                     </Button>
                                 </DialogClose>
                                 <Button type="submit" disabled={processing}>
                                     {processing
-                                        ? 'Saving…'
+                                        ? t('Saving…')
                                         : editing
-                                          ? 'Save changes'
-                                          : 'Add vehicle type'}
+                                          ? t('Save changes')
+                                          : t('Add vehicle type')}
                                 </Button>
                             </DialogFooter>
                         </>

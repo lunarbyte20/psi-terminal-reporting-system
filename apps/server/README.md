@@ -8,7 +8,7 @@ Laravel 13 with Inertia, React and TypeScript, MariaDB, Fortify (invite only), s
 2. Run `composer install` and `npm ci` in this directory.
 3. Copy `.env.example` to `.env`, set database credentials, then run `php artisan key:generate`.
 4. Run `php artisan migrate --seed`. The seeder loads the agreed supervisors, terminals and vehicle types, then asks privately for the first Admin's name, email and password (`psi:bootstrap-admin`). No password is stored in the repository. Re-running it changes nothing.
-5. Optional, local only: `php artisan db:seed --class=DemoUserSeeder` adds demo management and supervisor accounts (see `docs/demo-accounts.md`).
+5. Optional, local only: `php artisan db:seed --class=DemoUserSeeder` adds demo management and supervisor accounts (see `docs/demo-accounts.md`). Then `php artisan db:seed --class=DemoReportSeeder` adds sample reports for the last ten weeks, issues and an evaluation so the dashboard, charts and management report have data. It refuses to run in production and never changes existing reports.
 6. Run `npm run build` and `composer dev`.
 
 On Windows run PHP commands from PowerShell (Herd's PHP); Git Bash may pick up an older XAMPP PHP. If a `public/hot` file is left behind after stopping Vite, delete it, or pages will try to load from a dev server that is no longer running.

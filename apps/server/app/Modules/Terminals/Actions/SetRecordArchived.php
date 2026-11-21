@@ -28,7 +28,7 @@ class SetRecordArchived
 
             if ($archived && $record instanceof Supervisor && $record->terminals()->active()->exists()) {
                 throw ValidationException::withMessages([
-                    'archive' => 'Move this supervisor\'s terminals to another supervisor before archiving.',
+                    'archive' => __('Move this supervisor\'s terminals to another supervisor before archiving.'),
                 ]);
             }
 

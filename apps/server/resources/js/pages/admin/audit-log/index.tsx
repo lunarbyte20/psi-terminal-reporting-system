@@ -1,17 +1,14 @@
+import { auditActionLabel } from '@/lib/audit-labels';
+import { t, useLocale } from '@/lib/i18n';
 import { Form, Head, Link } from '@inertiajs/react';
 import { useState } from 'react';
+import { ChangeList } from '@/components/change-list';
 import { PageHeader, Panel } from '@/components/page-header';
 import { PageLinks } from '@/components/page-links';
+import { SearchableSelect } from '@/components/searchable-select';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { formatDateTime } from '@/lib/format';
 import type { NamedRecord, Paginated } from '@/types';
 
@@ -27,51 +24,6 @@ type Entry = {
 
 const ANYONE = 'any';
 
-function show(value: unknown): string {
-    if (value === null || value === undefined || value === '') return '—';
-    if (typeof value === 'string') return value;
-    if (typeof value === 'number' || typeof value === 'boolean') {
-        return value.toString();
-    }
-
-    return JSON.stringify(value);
-}
-
-/** Lists only the fields that changed, as "field: before → after". */
-function Changes({
-    before,
-    after,
-}: {
-    before: Entry['before'];
-    after: Entry['after'];
-}) {
-    const keys = [
-        ...new Set([...Object.keys(before ?? {}), ...Object.keys(after ?? {})]),
-    ].filter((key) => show(before?.[key]) !== show(after?.[key]));
-
-    if (keys.length === 0)
-        return <span className="text-muted-foreground">—</span>;
-
-    return (
-        <ul className="space-y-0.5">
-            {keys.map((key) => (
-                <li key={key} className="break-words">
-                    <span className="font-medium">
-                        {key.replaceAll('_', ' ')}:
-                    </span>{' '}
-                    {before !== null && (
-                        <span className="text-muted-foreground line-through">
-                            {show(before[key])}
-                        </span>
-                    )}
-                    {before !== null && after !== null && ' → '}
-                    {after !== null && <span>{show(after[key])}</span>}
-                </li>
-            ))}
-        </ul>
-    );
-}
-
 export default function AuditLog({
     filters,
     entries,
@@ -81,6 +33,7 @@ export default function AuditLog({
     entries: Paginated<Entry>;
     users: NamedRecord[];
 }) {
+    useLocale();
     const [user, setUser] = useState(
         filters.user === null ? ANYONE : String(filters.user),
     );
@@ -92,15 +45,17 @@ export default function AuditLog({
 
     return (
         <>
-            <Head title="Audit Log" />
+            <Head title={t('Audit Log')} />
             <main className="grid w-full grid-cols-1 gap-4 p-4 sm:p-6 lg:px-[3.5%] lg:py-8">
                 <PageHeader
-                    title="Audit Log"
-                    description="Administrative change history."
+                    title={t('Audit Log')}
+                    description={t('Administrative change history.')}
                 />
                 <Panel
-                    title="Audit Log"
-                    description="Record of administrative changes to reports, directory records and action items. Entries cannot be edited."
+                    title={t('Audit Log')}
+                    description={t(
+                        'Record of administrative changes to reports, directory records and action items. Entries cannot be edited.',
+                    )}
                 >
                     <Form
                         action="/admin/audit-log"
@@ -109,48 +64,40 @@ export default function AuditLog({
                     >
                         <div className="min-w-44 flex-1 space-y-1.5">
                             <Label htmlFor="audit-search" className="text-xs">
-                                Search action or record type
+                                {t('Search action or record type')}
                             </Label>
                             <Input
                                 id="audit-search"
                                 name="q"
                                 defaultValue={filters.q}
                                 maxLength={100}
-                                placeholder="e.g. issue.updated"
+                                placeholder={t('e.g. issue.updated')}
                             />
                         </div>
                         <div className="min-w-44 space-y-1.5">
                             <Label htmlFor="audit-user" className="text-xs">
-                                Changed by
+                                {t('Changed by')}
                             </Label>
-                            <Select value={user} onValueChange={setUser}>
-                                <SelectTrigger
-                                    id="audit-user"
-                                    className="w-full"
-                                >
-                                    <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value={ANYONE}>
-                                        Anyone
-                                    </SelectItem>
-                                    {users.map((item) => (
-                                        <SelectItem
-                                            key={item.id}
-                                            value={String(item.id)}
-                                        >
-                                            {item.name}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
+                            <SearchableSelect
+                                id="audit-user"
+                                value={user}
+                                onChange={setUser}
+                                options={[
+                                    { value: ANYONE, label: t('Anyone') },
+                                    ...users.map((item) => ({
+                                        value: String(item.id),
+                                        label: item.name,
+                                    })),
+                                ]}
+                                searchPlaceholder="Search people"
+                            />
                             {user !== ANYONE && (
                                 <input type="hidden" name="user" value={user} />
                             )}
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="audit-from" className="text-xs">
-                                From
+                                {t('From')}
                             </Label>
                             <Input
                                 id="audit-from"
@@ -161,7 +108,7 @@ export default function AuditLog({
                         </div>
                         <div className="space-y-1.5">
                             <Label htmlFor="audit-to" className="text-xs">
-                                To
+                                {t('To')}
                             </Label>
                             <Input
                                 id="audit-to"
@@ -171,12 +118,12 @@ export default function AuditLog({
                             />
                         </div>
                         <Button type="submit" variant="view">
-                            Apply filters
+                            {t('Apply filters')}
                         </Button>
                         {filtered && (
                             <Button variant="outline" asChild>
                                 <Link href="/admin/audit-log">
-                                    Clear filters
+                                    {t('Clear filters')}
                                 </Link>
                             </Button>
                         )}
@@ -185,8 +132,8 @@ export default function AuditLog({
                     {entries.data.length === 0 ? (
                         <p className="py-2 text-sm text-muted-foreground">
                             {filtered
-                                ? 'No changes match these filters.'
-                                : 'No changes recorded yet.'}
+                                ? t('No changes match these filters.')
+                                : t('No changes recorded yet.')}
                         </p>
                     ) : (
                         <div className="overflow-x-auto">
@@ -194,19 +141,19 @@ export default function AuditLog({
                                 <thead className="bg-[#fafaff] text-[9px] tracking-wider text-muted-foreground uppercase dark:bg-muted">
                                     <tr>
                                         <th className="px-2.5 py-2.5 text-left whitespace-nowrap">
-                                            Date and time
+                                            {t('Date and time')}
                                         </th>
                                         <th className="px-2.5 py-2.5 text-left">
-                                            User
+                                            {t('User')}
                                         </th>
                                         <th className="px-2.5 py-2.5 text-left">
-                                            Action
+                                            {t('Action')}
                                         </th>
                                         <th className="px-2.5 py-2.5 text-left">
-                                            Record
+                                            {t('Record')}
                                         </th>
                                         <th className="px-2.5 py-2.5 text-left">
-                                            Changes
+                                            {t('Changes')}
                                         </th>
                                     </tr>
                                 </thead>
@@ -223,13 +170,13 @@ export default function AuditLog({
                                                 {entry.user}
                                             </td>
                                             <td className="px-2.5 py-2.5 font-medium whitespace-nowrap">
-                                                {entry.action}
+                                                {auditActionLabel(entry.action)}
                                             </td>
                                             <td className="px-2.5 py-2.5 whitespace-nowrap">
                                                 {entry.record}
                                             </td>
                                             <td className="max-w-md min-w-60 px-2.5 py-2.5">
-                                                <Changes
+                                                <ChangeList
                                                     before={entry.before}
                                                     after={entry.after}
                                                 />
@@ -241,7 +188,9 @@ export default function AuditLog({
                         </div>
                     )}
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
-                        <p>{entries.total} changes</p>
+                        <p>
+                            {entries.total} {t('changes')}
+                        </p>
                         <PageLinks
                             previous={entries.prev_page_url}
                             next={entries.next_page_url}

@@ -38,9 +38,17 @@ class WeeklyReportController extends Controller
             'week' => $week?->summary(),
             'filters' => [...$filters, 'week' => $week?->id],
             'board' => $week === null ? null : $board->execute($request->user(), $week, $filters),
-            'supervisors' => $viewAll
-                ? Supervisor::query()->active()->orderBy('name')->limit(200)->get(['id', 'name'])
-                : [],
+            // Supervisor tabs and the Encode report form: each supervisor with the terminals assigned to them, in the agreed order.
+            'supervisors' => Supervisor::query()->active()
+                ->when(! $viewAll, fn ($query) => $query->whereKey($request->user()->supervisor->id ?? 0))
+                ->with(['terminals' => fn ($query) => $query->active()->orderBy('id')->select(['id', 'name', 'supervisor_id'])])
+                ->orderBy('id')->limit(200)->get(['id', 'name'])
+                ->map(fn (Supervisor $supervisor) => [
+                    'id' => $supervisor->id,
+                    'name' => $supervisor->name,
+                    'terminals' => $supervisor->terminals->map(fn (Terminal $terminal) => ['id' => $terminal->id, 'name' => $terminal->name])->values(),
+                ])->values(),
+            'viewAll' => $viewAll,
             'statuses' => ReportStatus::options(),
             'canStart' => $request->user()->can('start-reports'),
         ]);

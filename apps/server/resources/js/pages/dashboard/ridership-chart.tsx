@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { formatCount } from '@/lib/format';
 
 /**
@@ -10,13 +11,14 @@ export function RidershipChart({
 }: {
     rows: { vehicle_type: string; ridership: number; trips: number }[];
 }) {
+    useLocale();
     const total = rows.reduce((sum, row) => sum + row.ridership, 0);
     const largest = Math.max(1, ...rows.map((row) => row.ridership));
 
     if (total === 0) {
         return (
             <p className="py-3 text-sm text-muted-foreground">
-                No approved ridership for this week yet.
+                {t('No approved ridership for this week yet.')}
             </p>
         );
     }

@@ -15,6 +15,10 @@ class ShowDashboardRequest extends FormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        return ['week' => ['nullable', 'integer']];
+        return [
+            'week' => ['nullable', 'integer'],
+            'period' => ['nullable', 'in:week,month'],
+            'month' => ['nullable', 'regex:/^\d{4}-\d{2}$/'],
+        ];
     }
 }

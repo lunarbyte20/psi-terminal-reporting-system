@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Form } from '@inertiajs/react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -15,13 +16,17 @@ import type { AccountForm } from './form';
 
 /** Actions that change whether someone can sign in, kept apart from the details form. */
 export function AccountAccess({ account }: { account: AccountForm }) {
+    useLocale();
     return (
         <section className="max-w-3xl space-y-4 rounded-lg border bg-card p-5 sm:p-6">
             <div className="space-y-1">
-                <h2 className="text-base font-semibold">Account access</h2>
+                <h2 className="text-base font-semibold">
+                    {t('Account access')}
+                </h2>
                 <p className="text-sm text-muted-foreground">
-                    Reset a forgotten password or stop this person from signing
-                    in. Their past work stays saved either way.
+                    {t(
+                        'Reset a forgotten password or stop this person from signing in. Their past work stays saved either way.',
+                    )}
                 </p>
             </div>
             <div className="flex flex-wrap justify-end gap-2">
@@ -29,30 +34,36 @@ export function AccountAccess({ account }: { account: AccountForm }) {
                     action={`/admin/users/${account.id}/reset-password`}
                     trigger="Reset password"
                     triggerVariant="edit"
-                    title={`Reset ${account.name}'s password?`}
-                    description="A new one-time password replaces the current one, and they are signed out on every device."
-                    confirm="Reset password"
+                    title={t("Reset :0's password?", { '0': account.name })}
+                    description={t(
+                        'A new one-time password replaces the current one, and they are signed out on every device.',
+                    )}
+                    confirm={t('Reset password')}
                 />
                 <ConfirmAction
                     action={`/admin/users/${account.id}/status`}
                     fields={{ active: account.active ? '0' : '1' }}
                     trigger={
                         account.active
-                            ? 'Deactivate account'
-                            : 'Reactivate account'
+                            ? t('Deactivate account')
+                            : t('Reactivate account')
                     }
                     triggerVariant={account.active ? 'remove' : 'restore'}
                     title={
                         account.active
-                            ? `Deactivate ${account.name}?`
-                            : `Reactivate ${account.name}?`
+                            ? t('Deactivate :0?', { '0': account.name })
+                            : t('Reactivate :0?', { '0': account.name })
                     }
                     description={
                         account.active
-                            ? 'They are signed out now and cannot sign in until reactivated.'
-                            : 'They can sign in again with their current password.'
+                            ? t(
+                                  'They are signed out now and cannot sign in until reactivated.',
+                              )
+                            : t(
+                                  'They can sign in again with their current password.',
+                              )
                     }
-                    confirm={account.active ? 'Deactivate' : 'Reactivate'}
+                    confirm={account.active ? t('Deactivate') : t('Reactivate')}
                     destructive={account.active}
                 />
             </div>
@@ -79,19 +90,20 @@ function ConfirmAction({
     confirm: string;
     destructive?: boolean;
 }) {
+    useLocale();
     const [open, setOpen] = useState(false);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
                 <Button type="button" variant={triggerVariant}>
-                    {trigger}
+                    {t(trigger)}
                 </Button>
             </DialogTrigger>
             <DialogContent>
                 <DialogHeader>
-                    <DialogTitle>{title}</DialogTitle>
-                    <DialogDescription>{description}</DialogDescription>
+                    <DialogTitle>{t(title)}</DialogTitle>
+                    <DialogDescription>{t(description)}</DialogDescription>
                 </DialogHeader>
                 <Form
                     method="post"
@@ -123,7 +135,7 @@ function ConfirmAction({
                                         variant="outline"
                                         disabled={processing}
                                     >
-                                        Cancel
+                                        {t('Cancel')}
                                     </Button>
                                 </DialogClose>
                                 <Button
@@ -133,7 +145,7 @@ function ConfirmAction({
                                     }
                                     disabled={processing}
                                 >
-                                    {processing ? 'Working…' : confirm}
+                                    {processing ? t('Working…') : confirm}
                                 </Button>
                             </DialogFooter>
                         </div>

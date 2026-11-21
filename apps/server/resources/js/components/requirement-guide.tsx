@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import {
     CheckCircle2,
     ChevronDown,
@@ -40,6 +41,7 @@ export function RequirementGuide({
     defaultOpen?: boolean;
     className?: string;
 }) {
+    useLocale();
     const [open, setOpen] = useState(defaultOpen);
 
     return (
@@ -59,9 +61,9 @@ export function RequirementGuide({
                     />
                     <div className="min-w-0 flex-1 space-y-1">
                         <h2 className="font-semibold text-foreground">
-                            {title}
+                            {t(title)}
                         </h2>
-                        <p className="text-muted-foreground">{summary}</p>
+                        <p className="text-muted-foreground">{t(summary)}</p>
                     </div>
                 </div>
                 <CollapsibleTrigger asChild>
@@ -74,12 +76,12 @@ export function RequirementGuide({
                         {open ? (
                             <>
                                 <ChevronUp aria-hidden="true" />
-                                Hide guide
+                                {t('Hide guide')}
                             </>
                         ) : (
                             <>
                                 <ChevronDown aria-hidden="true" />
-                                View guide
+                                {t('View guide')}
                             </>
                         )}
                     </Button>
@@ -110,7 +112,7 @@ export function RequirementGuide({
                             )}
                             <div className="min-w-0">
                                 <span className="font-medium text-foreground">
-                                    {item.label}
+                                    {t(item.label)}
                                 </span>
                                 {item.detail && (
                                     <span className="text-muted-foreground">
@@ -125,9 +127,9 @@ export function RequirementGuide({
                 {nextStep && (
                     <div className="border-t pt-2.5 pl-6.5 text-xs text-muted-foreground sm:text-sm">
                         <span className="font-medium text-foreground">
-                            Next step:{' '}
+                            {t('Next step:')}{' '}
                         </span>
-                        {nextStep}
+                        {t(nextStep)}
                     </div>
                 )}
             </CollapsibleContent>

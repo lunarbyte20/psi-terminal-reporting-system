@@ -34,7 +34,7 @@ class ReviewWeeklyReportRequest extends FormRequest
     /** @return array<string, string> */
     public function messages(): array
     {
-        return ['reason.required' => 'Explain what needs to be corrected so the supervisor knows what to fix.'];
+        return ['reason.required' => __('Explain what needs to be corrected so the supervisor knows what to fix.')];
     }
 
     public function decision(): ReviewDecision

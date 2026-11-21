@@ -69,10 +69,26 @@ export type WeeklyReportDetails = {
 
 export type IssueStatus = 'pending' | 'ongoing' | 'completed' | 'on_hold';
 
+export type IssuePriority = 'critical' | 'high' | 'medium' | 'low';
+
+export type IssueTag = {
+    id: number;
+    name: string;
+    color: string;
+    archived_at?: string | null;
+};
+
 export type OperationalIssue = {
+    tags: IssueTag[];
     id: number;
     key_issue: string;
     action_plan: string | null;
+    actions_taken: string | null;
+    results: string | null;
+    priority: IssuePriority;
+    priority_label: string;
+    reported_on: string | null;
+    resolved_on: string | null;
     responsible_person: string | null;
     department: string | null;
     target_date: string | null;

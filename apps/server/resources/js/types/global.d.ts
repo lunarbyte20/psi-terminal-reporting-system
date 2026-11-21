@@ -9,6 +9,8 @@ declare module 'react' {
 declare module '@inertiajs/core' {
     export interface InertiaConfig {
         sharedPageProps: {
+            locale: 'en' | 'fil';
+            issueTags: import('@/types/psi').IssueTag[];
             name: string;
             auth: Auth;
             sidebarOpen: boolean;

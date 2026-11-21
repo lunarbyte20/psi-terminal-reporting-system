@@ -1,8 +1,13 @@
-import { Form } from '@inertiajs/react';
+import { t, useLocale } from '@/lib/i18n';
+import { Form, usePage } from '@inertiajs/react';
+import { IssueTags } from '@/components/issue-tags';
+import type { IssueTag } from '@/types';
 import { Pencil, Plus } from 'lucide-react';
 import { useState } from 'react';
 import { fieldAria, FormField } from '@/components/form-field';
+import { ISSUE_PRIORITIES } from '@/components/issue-priority-badge';
 import { RowAction } from '@/components/row-action';
+import { SearchableSelect } from '@/components/searchable-select';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -50,6 +55,20 @@ export function IssueDialog({
     triggerLabel?: string;
     variant?: 'default' | 'outline';
 }) {
+    useLocale();
+    const { auth, issueTags } = usePage().props;
+    const availableTags = [
+        ...new Map<number, IssueTag>(
+            [...issueTags, ...(issue?.tags ?? [])].map((tag) => [tag.id, tag]),
+        ).values(),
+    ].filter(
+        (tag) =>
+            !tag.archived_at ||
+            issue?.tags.some((existing) => existing.id === tag.id),
+    );
+    const [selectedTags, setSelectedTags] = useState<number[]>(
+        issue?.tags.map((tag) => tag.id) ?? [],
+    );
     const [open, setOpen] = useState(false);
     const [status, setStatus] = useState(issue?.status ?? 'pending');
     // Only the Admin gets a supervisor list; supervisors must tie each issue to one of their terminals.
@@ -66,6 +85,9 @@ export function IssueDialog({
         String(issue?.supervisor_id ?? NONE),
     );
     const [ceo, setCeo] = useState(issue?.requires_ceo_decision ?? false);
+    const [priority, setPriority] = useState<string>(
+        issue?.priority ?? 'medium',
+    );
     const editing = issue !== undefined;
 
     return (
@@ -74,7 +96,7 @@ export function IssueDialog({
                 <RowAction
                     icon={Pencil}
                     tone="edit"
-                    label={`Edit issue: ${issue.key_issue}`}
+                    label={t('Edit issue: :0', { '0': issue.key_issue })}
                     trigger={(button) => (
                         <DialogTrigger asChild>{button}</DialogTrigger>
                     )}
@@ -95,8 +117,9 @@ export function IssueDialog({
                             : 'Add issue / action item'}
                     </DialogTitle>
                     <DialogDescription>
-                        Open issues stay on the list every week until they are
-                        marked Completed.
+                        {t(
+                            'Open issues stay on the list every week until they are marked Completed.',
+                        )}
                     </DialogDescription>
                 </DialogHeader>
                 <Form
@@ -104,6 +127,11 @@ export function IssueDialog({
                     method={editing ? 'put' : 'post'}
                     options={{ preserveScroll: true }}
                     onSuccess={() => setOpen(false)}
+                    transform={(data) =>
+                        auth.can.administer
+                            ? { ...data, tag_ids: selectedTags }
+                            : data
+                    }
                     resetOnSuccess={!editing}
                     className="space-y-4"
                 >
@@ -111,7 +139,7 @@ export function IssueDialog({
                         <>
                             <FormField
                                 id="issue-key"
-                                label="Key issue"
+                                label={t('Key issue')}
                                 required
                                 error={errors.key_issue}
                             >
@@ -128,7 +156,7 @@ export function IssueDialog({
                             </FormField>
                             <FormField
                                 id="issue-action"
-                                label="Action plan"
+                                label={t('Action plan')}
                                 error={errors.action_plan}
                             >
                                 <Textarea
@@ -145,7 +173,7 @@ export function IssueDialog({
                             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                                 {fixedTerminal ? (
                                     <div className="space-y-2">
-                                        <Label>Terminal</Label>
+                                        <Label>{t('Terminal')}</Label>
                                         <p className="rounded-md border bg-muted px-3 py-2 text-sm">
                                             {fixedTerminal.name}
                                         </p>
@@ -153,38 +181,40 @@ export function IssueDialog({
                                 ) : (
                                     <FormField
                                         id="issue-terminal"
-                                        label="Terminal"
+                                        label={t('Terminal')}
                                         error={errors.terminal_id}
                                     >
-                                        <Select
+                                        <SearchableSelect
+                                            id="issue-terminal"
                                             value={terminalId}
-                                            onValueChange={setTerminalId}
-                                        >
-                                            <SelectTrigger
-                                                id="issue-terminal"
-                                                className="w-full"
-                                            >
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem
-                                                    value={NONE}
-                                                    disabled={terminalRequired}
-                                                >
-                                                    No terminal
-                                                </SelectItem>
-                                                {terminals.map((terminal) => (
-                                                    <SelectItem
-                                                        key={terminal.id}
-                                                        value={String(
+                                            onChange={setTerminalId}
+                                            options={[
+                                                // Supervisors must tie an issue to one of their terminals.
+                                                ...(terminalRequired
+                                                    ? []
+                                                    : [
+                                                          {
+                                                              value: NONE,
+                                                              label: t(
+                                                                  'No terminal (general)',
+                                                              ),
+                                                          },
+                                                      ]),
+                                                ...terminals.map(
+                                                    (terminal) => ({
+                                                        value: String(
                                                             terminal.id,
-                                                        )}
-                                                    >
-                                                        {terminal.name}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
+                                                        ),
+                                                        label: terminal.name,
+                                                    }),
+                                                ),
+                                            ]}
+                                            placeholder={t('Select terminal')}
+                                            searchPlaceholder="Search terminals"
+                                            invalid={Boolean(
+                                                errors.terminal_id,
+                                            )}
+                                        />
                                     </FormField>
                                 )}
                                 <input
@@ -198,38 +228,35 @@ export function IssueDialog({
                                 {!fixedTerminal && chooseSupervisor && (
                                     <FormField
                                         id="issue-supervisor"
-                                        label="Supervisor"
-                                        hint="Leave as automatic to use the terminal's supervisor."
+                                        label={t('Supervisor')}
+                                        hint={t(
+                                            "Leave as automatic to use the terminal's supervisor.",
+                                        )}
                                         error={errors.supervisor_id}
                                     >
-                                        <Select
+                                        <SearchableSelect
+                                            id="issue-supervisor"
                                             value={supervisorId}
-                                            onValueChange={setSupervisorId}
-                                        >
-                                            <SelectTrigger
-                                                id="issue-supervisor"
-                                                className="w-full"
-                                            >
-                                                <SelectValue />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value={NONE}>
-                                                    Automatic / none
-                                                </SelectItem>
-                                                {supervisors.map(
-                                                    (supervisor) => (
-                                                        <SelectItem
-                                                            key={supervisor.id}
-                                                            value={String(
-                                                                supervisor.id,
-                                                            )}
-                                                        >
-                                                            {supervisor.name}
-                                                        </SelectItem>
+                                            onChange={setSupervisorId}
+                                            options={[
+                                                {
+                                                    value: NONE,
+                                                    label: t(
+                                                        'Automatic / none',
                                                     ),
-                                                )}
-                                            </SelectContent>
-                                        </Select>
+                                                },
+                                                ...supervisors.map(
+                                                    (supervisor) => ({
+                                                        value: String(
+                                                            supervisor.id,
+                                                        ),
+                                                        label: supervisor.name,
+                                                    }),
+                                                ),
+                                            ]}
+                                            searchPlaceholder="Search supervisors"
+                                            describedBy="issue-supervisor-hint"
+                                        />
                                         <input
                                             type="hidden"
                                             name="supervisor_id"
@@ -244,7 +271,7 @@ export function IssueDialog({
 
                                 <FormField
                                     id="issue-person"
-                                    label="Responsible person"
+                                    label={t('Responsible person')}
                                     error={errors.responsible_person}
                                 >
                                     <Input
@@ -260,7 +287,7 @@ export function IssueDialog({
                                 </FormField>
                                 <FormField
                                     id="issue-dept"
-                                    label="Department"
+                                    label={t('Department')}
                                     error={errors.department}
                                 >
                                     <Input
@@ -274,7 +301,7 @@ export function IssueDialog({
                                 </FormField>
                                 <FormField
                                     id="issue-date"
-                                    label="Target date"
+                                    label={t('Target date')}
                                     error={errors.target_date}
                                 >
                                     <Input
@@ -288,7 +315,7 @@ export function IssueDialog({
                                 </FormField>
                                 <FormField
                                     id="issue-status"
-                                    label="Status"
+                                    label={t('Status')}
                                     required
                                     error={errors.status}
                                 >
@@ -310,7 +337,7 @@ export function IssueDialog({
                                                     key={option.value}
                                                     value={option.value}
                                                 >
-                                                    {option.label}
+                                                    {t(option.label)}
                                                 </SelectItem>
                                             ))}
                                         </SelectContent>
@@ -321,11 +348,97 @@ export function IssueDialog({
                                         value={status}
                                     />
                                 </FormField>
+                                <FormField
+                                    id="issue-priority"
+                                    label={t('Priority')}
+                                    required
+                                    error={errors.priority}
+                                >
+                                    <Select
+                                        value={priority}
+                                        onValueChange={setPriority}
+                                    >
+                                        <SelectTrigger
+                                            id="issue-priority"
+                                            className="w-full"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {ISSUE_PRIORITIES.map((option) => (
+                                                <SelectItem
+                                                    key={option.value}
+                                                    value={option.value}
+                                                >
+                                                    {t(option.label)}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <input
+                                        type="hidden"
+                                        name="priority"
+                                        value={priority}
+                                    />
+                                </FormField>
+                                <FormField
+                                    id="issue-reported"
+                                    label={t('Reporting date')}
+                                    hint={t(
+                                        'When the issue was reported. Defaults to today.',
+                                    )}
+                                    error={errors.reported_on}
+                                >
+                                    <Input
+                                        {...fieldAria('issue-reported', {
+                                            hint: true,
+                                            error: errors.reported_on,
+                                        })}
+                                        name="reported_on"
+                                        type="date"
+                                        defaultValue={issue?.reported_on ?? ''}
+                                    />
+                                </FormField>
+                            </div>
+
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                <FormField
+                                    id="issue-actions-taken"
+                                    label={t('Actions taken')}
+                                    error={errors.actions_taken}
+                                >
+                                    <Textarea
+                                        {...fieldAria('issue-actions-taken', {
+                                            error: errors.actions_taken,
+                                        })}
+                                        name="actions_taken"
+                                        rows={2}
+                                        maxLength={2000}
+                                        defaultValue={
+                                            issue?.actions_taken ?? ''
+                                        }
+                                    />
+                                </FormField>
+                                <FormField
+                                    id="issue-results"
+                                    label={t('Results')}
+                                    error={errors.results}
+                                >
+                                    <Textarea
+                                        {...fieldAria('issue-results', {
+                                            error: errors.results,
+                                        })}
+                                        name="results"
+                                        rows={2}
+                                        maxLength={2000}
+                                        defaultValue={issue?.results ?? ''}
+                                    />
+                                </FormField>
                             </div>
 
                             <FormField
                                 id="issue-remarks"
-                                label="Remarks"
+                                label={t('Remarks')}
                                 error={errors.remarks}
                             >
                                 <Textarea
@@ -349,11 +462,12 @@ export function IssueDialog({
                                 />
                                 <div className="space-y-0.5">
                                     <Label htmlFor="issue-ceo">
-                                        Requires CEO decision
+                                        {t('Requires CEO decision')}
                                     </Label>
                                     <p className="text-xs text-muted-foreground">
-                                        Flags it on the CEO's dashboard until
-                                        resolved.
+                                        {t(
+                                            "Flags it on the CEO's dashboard until resolved.",
+                                        )}
                                     </p>
                                 </div>
                                 <input
@@ -363,6 +477,73 @@ export function IssueDialog({
                                 />
                             </div>
 
+                            {auth.can.administer && (
+                                <fieldset className="space-y-2">
+                                    <legend className="text-sm font-medium">
+                                        {t('Issue tags')}
+                                    </legend>
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('Choose one or more categories.')}
+                                    </p>
+                                    <div className="flex flex-wrap gap-3">
+                                        {availableTags.map((tag) => (
+                                            <label
+                                                key={tag.id}
+                                                className="flex items-center gap-2"
+                                            >
+                                                <Checkbox
+                                                    checked={selectedTags.includes(
+                                                        tag.id,
+                                                    )}
+                                                    onCheckedChange={(
+                                                        checked,
+                                                    ) =>
+                                                        setSelectedTags(
+                                                            (current) =>
+                                                                checked
+                                                                    ? [
+                                                                          ...current,
+                                                                          tag.id,
+                                                                      ]
+                                                                    : current.filter(
+                                                                          (
+                                                                              id,
+                                                                          ) =>
+                                                                              id !==
+                                                                              tag.id,
+                                                                      ),
+                                                        )
+                                                    }
+                                                />
+                                                <IssueTags tags={[tag]} />
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {selectedTags.map((id) => (
+                                        <input
+                                            key={id}
+                                            type="hidden"
+                                            name="tag_ids[]"
+                                            value={id}
+                                        />
+                                    ))}
+                                    {Object.entries(errors)
+                                        .filter(
+                                            ([key]) =>
+                                                key === 'tag_ids' ||
+                                                key.startsWith('tag_ids.'),
+                                        )
+                                        .map(([key, message]) => (
+                                            <p
+                                                key={key}
+                                                role="alert"
+                                                className="text-sm text-destructive"
+                                            >
+                                                {t(message)}
+                                            </p>
+                                        ))}
+                                </fieldset>
+                            )}
                             <DialogFooter>
                                 <DialogClose asChild>
                                     <Button
@@ -370,15 +551,15 @@ export function IssueDialog({
                                         variant="outline"
                                         disabled={processing}
                                     >
-                                        Cancel
+                                        {t('Cancel')}
                                     </Button>
                                 </DialogClose>
                                 <Button type="submit" disabled={processing}>
                                     {processing
-                                        ? 'Saving…'
+                                        ? t('Saving…')
                                         : editing
-                                          ? 'Save changes'
-                                          : 'Add issue'}
+                                          ? t('Save changes')
+                                          : t('Add issue')}
                                 </Button>
                             </DialogFooter>
                         </>

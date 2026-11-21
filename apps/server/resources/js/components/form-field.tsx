@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Link } from '@inertiajs/react';
 import type { ReactNode } from 'react';
 import InputError from '@/components/input-error';
@@ -27,24 +28,25 @@ export function FormField({
     className?: string;
     children: ReactNode;
 }) {
+    useLocale();
     return (
         <div className={cn('space-y-2', className)}>
             <Label htmlFor={id} className="flex items-baseline gap-1">
-                {label}
+                {t(label)}
                 {required ? (
                     <span aria-hidden="true" className="text-destructive">
                         *
                     </span>
                 ) : (
                     <span className="text-xs font-normal text-muted-foreground">
-                        Optional
+                        {t('Optional')}
                     </span>
                 )}
             </Label>
             {children}
             {hint && (
                 <p id={`${id}-hint`} className="text-xs text-muted-foreground">
-                    {hint}
+                    {t(hint)}
                 </p>
             )}
             <InputError id={`${id}-error`} message={error} />
@@ -88,6 +90,7 @@ export function FormSection({
     className?: string;
     children: ReactNode;
 }) {
+    useLocale();
     return (
         <section
             className={cn(
@@ -96,10 +99,10 @@ export function FormSection({
             )}
         >
             <div className="space-y-1">
-                <h2 className="text-base font-semibold">{title}</h2>
+                <h2 className="text-base font-semibold">{t(title)}</h2>
                 {description && (
                     <p className="text-sm text-muted-foreground">
-                        {description}
+                        {t(description)}
                     </p>
                 )}
             </div>
@@ -113,6 +116,7 @@ export function FormSection({
  * keyboard order on narrow screens.
  */
 export function FormSections({ children }: { children: ReactNode }) {
+    useLocale();
     return (
         <div className="@container">
             <div className="grid items-stretch gap-5 @min-[48rem]:grid-cols-2">
@@ -141,6 +145,7 @@ export function FormActions({
     onSubmitClick?: () => void;
     fixed?: boolean;
 }) {
+    useLocale();
     const actions = (
         <div
             className={cn(
@@ -165,7 +170,7 @@ export function FormActions({
                         aria-disabled={processing || undefined}
                         tabIndex={processing ? -1 : undefined}
                     >
-                        Cancel
+                        {t('Cancel')}
                     </Link>
                 </Button>
             )}
@@ -186,10 +191,11 @@ export function FormActions({
 }
 
 export function RequiredLegend() {
+    useLocale();
     return (
         <p className="text-sm text-muted-foreground">
-            Fields marked <span className="text-destructive">*</span> are
-            required.
+            {t('Fields marked')}
+            <span className="text-destructive">*</span> {t('are required.')}
         </p>
     );
 }

@@ -39,7 +39,7 @@ export function NavUser() {
                         </SidebarMenuButton>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
-                        className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg [--accent-foreground:#23118c] [--accent:#eef2ff] dark:[--accent-foreground:#fff7b3] dark:[--accent:#30236b]"
+                        className="w-(--radix-dropdown-menu-trigger-width) min-w-56 rounded-lg [--accent-foreground:#23118c] [--accent:#eef2ff] dark:[--accent-foreground:#dce5f5] dark:[--accent:#32363e]"
                         align="end"
                         // Opens in line with the account button inside the sidebar (it flips
                         // upward at the bottom of the screen); beside the rail only when collapsed.

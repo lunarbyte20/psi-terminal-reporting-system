@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { router } from '@inertiajs/react';
 import { RefreshCw } from 'lucide-react';
 import { useState } from 'react';
@@ -9,6 +10,7 @@ import { cn } from '@/lib/utils';
  * filters, sort, and page stay as they are and current rows remain visible.
  */
 export function RefreshButton({ only }: { only?: string[] }) {
+    useLocale();
     const [state, setState] = useState<'idle' | 'loading' | 'done' | 'failed'>(
         'idle',
     );
@@ -37,12 +39,12 @@ export function RefreshButton({ only }: { only?: string[] }) {
                     aria-hidden="true"
                     className={cn(state === 'loading' && 'animate-spin')}
                 />
-                {state === 'loading' ? 'Refreshing…' : 'Refresh'}
+                {state === 'loading' ? t('Refreshing…') : t('Refresh')}
             </Button>
             <span role="status" className="sr-only">
-                {state === 'done' && 'List refreshed.'}
+                {state === 'done' && t('List refreshed.')}
                 {state === 'failed' &&
-                    'The list could not be refreshed. Try again.'}
+                    t('The list could not be refreshed. Try again.')}
             </span>
         </>
     );

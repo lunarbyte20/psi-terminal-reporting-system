@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Plus, X } from 'lucide-react';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
@@ -13,6 +14,7 @@ export function RecommendationsEditor({
     errors: Record<string, string | undefined>;
     onChange: (items: string[]) => void;
 }) {
+    useLocale();
     const filled = items.filter((item) => item.trim() !== '').length;
 
     return (
@@ -25,7 +27,7 @@ export function RecommendationsEditor({
                     id="recommendations-heading"
                     className="text-sm font-medium"
                 >
-                    Management recommendations
+                    {t('Management recommendations')}
                 </h3>
                 <Button
                     type="button"
@@ -34,7 +36,7 @@ export function RecommendationsEditor({
                     onClick={() => onChange([...items, ''])}
                 >
                     <Plus aria-hidden="true" />
-                    Add recommendation
+                    {t('Add recommendation')}
                 </Button>
             </div>
             <ol className="space-y-2">
@@ -48,11 +50,13 @@ export function RecommendationsEditor({
                         </span>
                         <div className="flex-1">
                             <Textarea
-                                aria-label={`Recommendation ${index + 1}`}
+                                aria-label={t('Recommendation :0', {
+                                    '0': index + 1,
+                                })}
                                 rows={2}
                                 maxLength={1000}
                                 value={item}
-                                placeholder="Recommendation"
+                                placeholder={t('Recommendation')}
                                 onChange={(event) =>
                                     onChange(
                                         items.map((value, position) =>
@@ -71,7 +75,9 @@ export function RecommendationsEditor({
                             type="button"
                             variant="ghost"
                             size="icon"
-                            aria-label={`Remove recommendation ${index + 1}`}
+                            aria-label={t('Remove recommendation :0', {
+                                '0': index + 1,
+                            })}
                             onClick={() =>
                                 onChange(
                                     items.filter(
@@ -92,8 +98,10 @@ export function RecommendationsEditor({
                         : 'text-xs text-muted-foreground'
                 }
             >
-                {filled} written. Add at least five recommendations when
-                applicable. You can add as many as needed.
+                {filled}{' '}
+                {t(
+                    'written. Add at least five recommendations when applicable. You can add as many as needed.',
+                )}
             </p>
         </section>
     );

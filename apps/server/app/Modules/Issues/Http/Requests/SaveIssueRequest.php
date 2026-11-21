@@ -3,6 +3,7 @@
 namespace App\Modules\Issues\Http\Requests;
 
 use App\Modules\Issues\Data\IssueInput;
+use App\Modules\Issues\Enums\IssuePriority;
 use App\Modules\Issues\Enums\IssueStatus;
 use App\Modules\Issues\Models\OperationalIssue;
 use App\Modules\Terminals\Models\Terminal;
@@ -37,8 +38,18 @@ class SaveIssueRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'tag_ids' => [Rule::prohibitedIf(! Gate::allows('administer')), 'sometimes', 'array', 'max:20'],
+            'tag_ids.*' => ['integer', 'distinct', Rule::exists('issue_tags', 'id')->where(function ($query): void {
+                $issue = $this->route('issue');
+                $retained = $issue instanceof OperationalIssue ? $issue->tags()->pluck('issue_tags.id')->all() : [];
+                $query->whereNull('archived_at')->orWhereIn('id', $retained);
+            })],
             'key_issue' => ['required', 'string', 'max:500'],
             'action_plan' => ['nullable', 'string', 'max:2000'],
+            'actions_taken' => ['nullable', 'string', 'max:2000'],
+            'results' => ['nullable', 'string', 'max:2000'],
+            'priority' => ['nullable', Rule::enum(IssuePriority::class)],
+            'reported_on' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
             'responsible_person' => ['nullable', 'string', 'max:120'],
             'department' => ['nullable', 'string', 'max:120'],
             'target_date' => ['nullable', 'date_format:Y-m-d'],
@@ -54,7 +65,7 @@ class SaveIssueRequest extends FormRequest
     /** @return array<string, string> */
     public function attributes(): array
     {
-        return ['key_issue' => 'key issue', 'action_plan' => 'action plan', 'target_date' => 'target date'];
+        return ['key_issue' => __('key issue'), 'action_plan' => __('action plan'), 'target_date' => __('target date')];
     }
 
     public function toInput(): IssueInput
@@ -74,6 +85,11 @@ class SaveIssueRequest extends FormRequest
             terminalId: isset($data['terminal_id']) ? (int) $data['terminal_id'] : null,
             // Only the Admin picks a supervisor; for everyone else it follows the terminal.
             supervisorId: isset($data['supervisor_id']) && Gate::allows('administer') ? (int) $data['supervisor_id'] : null,
+            priority: IssuePriority::tryFrom((string) ($data['priority'] ?? '')) ?? IssuePriority::Medium,
+            reportedOn: $text('reported_on') === null ? null : CarbonImmutable::createFromFormat('!Y-m-d', (string) $data['reported_on']),
+            actionsTaken: $text('actions_taken'),
+            results: $text('results'),
+            tagIds: array_key_exists('tag_ids', $data) ? array_values(array_map('intval', $data['tag_ids'])) : null,
         );
     }
 }

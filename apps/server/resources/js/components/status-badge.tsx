@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
@@ -9,7 +10,7 @@ const toneClasses: Record<Tone, string> = {
     warning:
         'border-status-warning-border bg-status-warning-bg text-status-warning-fg',
     danger: 'border-status-danger-border bg-status-danger-bg text-status-danger-fg',
-    info: 'border-blue-300 bg-blue-50 text-blue-900 dark:border-blue-700 dark:bg-blue-950 dark:text-blue-100',
+    info: 'border-blue-300 bg-blue-50 text-blue-900 dark:border-blue-200/40 dark:bg-blue-200/10 dark:text-blue-200',
     neutral: 'border-border bg-muted text-muted-foreground',
 };
 
@@ -22,9 +23,10 @@ export function StatusBadge({
     tone: Tone;
     className?: string;
 }) {
+    useLocale();
     return (
         <Badge variant="outline" className={cn(toneClasses[tone], className)}>
-            {label}
+            {t(label)}
         </Badge>
     );
 }

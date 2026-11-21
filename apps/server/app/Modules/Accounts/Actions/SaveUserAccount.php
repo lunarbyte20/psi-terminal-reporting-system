@@ -27,7 +27,7 @@ class SaveUserAccount
             $user ??= new User;
 
             if (! $creating && $user->is($actor) && $role !== $user->primaryRole()) {
-                throw ValidationException::withMessages(['role' => 'You cannot change your own role.']);
+                throw ValidationException::withMessages(['role' => __('You cannot change your own role.')]);
             }
 
             $supervisor = $this->supervisorFor($role, $supervisorId, $user);
@@ -66,10 +66,10 @@ class SaveUserAccount
 
         $supervisor = $supervisorId === null ? null : Supervisor::query()->active()->whereKey($supervisorId)->lockForUpdate()->first();
         if ($supervisor === null) {
-            throw ValidationException::withMessages(['supervisor_id' => 'Choose the supervisor record this account belongs to.']);
+            throw ValidationException::withMessages(['supervisor_id' => __('Choose the supervisor record this account belongs to.')]);
         }
         if ($supervisor->user_id !== null && $supervisor->user_id !== $user->id) {
-            throw ValidationException::withMessages(['supervisor_id' => 'This supervisor already has a sign-in account.']);
+            throw ValidationException::withMessages(['supervisor_id' => __('This supervisor already has a sign-in account.')]);
         }
 
         return $supervisor;

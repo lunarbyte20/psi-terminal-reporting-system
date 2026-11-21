@@ -28,7 +28,11 @@ Monday to Sunday, cut at month end (e.g. Oct 1–4, Oct 26–31), due the follow
 - Ridership per vehicle type = passengers per trip × trips. Passengers per trip is pre-filled from the terminal's last report.
 - Remarks for general notes. Issues are recorded only in the Issues & Action Items section (no free-text "key issues" field).
 - One report per terminal per week.
-- Workflow: Draft → Submitted (Waiting for review) → Approved, or Submitted → Returned (with a reason) → Submitted. The Admin may encode a report herself and **Save and approve** in one step. An approved report is locked; the Admin can reopen it for correction with a reason. Every step is kept in the report's history.
+- Weekly Reports page (as in the prototype): supervisor tabs (All Supervisors, then each supervisor in the agreed order), a summary card per supervisor ("X of Y terminals encoded", approved sales), and the terminal table (sales total, passengers, trips, status). **Encode report** picks the supervisor, then one of that supervisor's terminals; a terminal belonging to someone else is refused.
+- Every terminal, supervisor and person picker is searchable (type to filter).
+- Workflow: Draft → Submitted (Waiting for review) → Approved, or Submitted → Returned (with a reason) → Submitted. The Admin may encode a report herself and **Save and approve** in one step, or **Approve all** waiting reports for a week/supervisor in bulk. An approved report is locked; the Admin can reopen it for correction with a reason. Every step is kept in the report's history.
+- Draft edits are auto-saved locally in the browser with a restore prompt on return, and cleared on server save/submit.
+- Weekly report reminders (`psi:send-report-reminders`, or **Send reminders** on Weekly Reports) notify supervisors in the app (bell icon; no email) who still have not-started, draft, or returned terminals.
 
 ## Dashboard, history and exports
 
@@ -38,8 +42,9 @@ Monday to Sunday, cut at month end (e.g. Oct 1–4, Oct 26–31), due the follow
 - "Supervisor sequence" sorting follows the numbered order from the requirements.
 - Charts: sales distribution by supervisor (donut), weekly sales trend (last eight weeks, short weeks faded), terminal sales comparison (this week against last), and ridership by vehicle type.
 - Monthly Ridership consolidates approved ridership for a calendar month by reporting week, vehicle type, supervisor (the one on each report) and terminal.
-- Excel export is a CSV (UTF-8 with BOM) of the terminal breakdown that opens directly in Excel.
-- Print / Save PDF uses 8.5 × 13 in portrait paper with 0.5 in margins.
+- Dashboard supports viewing by **Week** or by **Month** (aggregating approved reports across the calendar month vs the previous month).
+- Excel export provides a native `.xlsx` workbook (Terminal Breakdown + Ridership by Vehicle sheets) as well as CSV (UTF-8 with BOM).
+- Print / Save PDF uses 8.5 × 13 in portrait paper with 0.5 in margins, including a dedicated two-column **Management report (PDF)** view combining dashboard KPIs, rankings, ridership, issues, and the week's evaluation.
 - Supervisors see dashboard figures and history for their own terminals only.
 
 ## Issues & Actions
@@ -48,9 +53,61 @@ Fields: key issue, action plan, responsible person, department, target date, sta
 
 ## Evaluation & Recommendations
 
-One per reporting week, written by the Admin: key issues and concerns, evaluation, and a numbered list of recommendations (at least five suggested, not enforced). Read-only for management; hidden from supervisors.
+One per reporting week, written by the Admin: key issues and concerns, evaluation, a numbered list of recommendations (at least five suggested, not enforced), and optional detailed operational/departmental sections. Read-only for management; hidden from supervisors.
+
+## Enhancements agreed 2026-11-21
+
+### Issue tags
+
+Admin creates, renames, recolors, archives and restores issue tags, and assigns
+up to 20 tags to an issue. The eight suggested categories are initial editable
+records. Supervisors can update their issues but cannot change the tag assignment;
+management reads labels only. An archived tag remains attached and visible on
+existing issues but cannot be newly assigned. Changing a tag's name or color is
+reflected consistently on every current view; the audit log keeps before/after
+values for tag edits and issue assignments. Issues can be filtered by any tag,
+including archived tags, and sorted by their alphabetically first tag.
+
+Labels appear on issue lists/details, terminal report issues, the dashboard
+snapshot, and the printable management report. Issue Excel exports retain tag
+colors; CSV contains the tag name and hex color because CSV has no styling.
+For multiple tags, exports repeat the issue once per tag. Exports respect the
+same filters and supervisor visibility as the issue list.
+
+### Language and appearance
+
+English and Filipino are supported interface languages. A header language button
+switches text in place, without reloading the page or resetting encoded form
+values, local drafts or the session. The account stores the language preference.
+Names, free-text concerns, financial figures and other encoded business content
+are not translated. Filipino uses familiar corporate and operational terminology.
+Validation and newly generated reminders use the account language.
+
+The header shows the current light/dark theme and provides a one-click toggle.
+The account stores the theme; cookie/local storage apply it immediately and on
+subsequent visits. The old Appearance settings URL redirects to Profile. Failed
+preference saves report an error and allow retry; failed theme saves roll back
+visually. The theme and language controls do not submit any open form.
+
+### Vehicle passenger defaults
+
+Vehicle type administration replaces Display order with Number of passengers
+(0–500), a default **per trip**, not a passenger total. Existing internal ordering
+is retained without an editable display-order control. A new ridership entry may
+start from the terminal's prior report, otherwise the configured passenger default.
+Supervisors can adjust Number of passengers and Number of trips. Total ridership
+remains passengers per trip × trips, recomputed by the server. Saved ridership
+lines, including zero lines, always retain their values; changing a vehicle default
+never rewrites historical reports or approved totals.
+
+### Management report PDF
+
+The weekly and monthly management report prints on long-bond paper and is
+limited to three pages. The report keeps its full saved-report data; when a
+page's content is unusually long, that page scales down to fit its page. Donut
+charts include directional arrows pointing into each colored slice, alongside
+the matching labeled legend.
 
 ## Open decisions
 
-- An official .xlsx (rather than CSV) and a dedicated two-column printed management report, if management needs more than the dashboard printout.
-- Whether management wants weekly report reminders (email or SMS) for terminals not started by the due date.
+None currently pending for v1.

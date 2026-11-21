@@ -11,7 +11,9 @@ use App\Modules\Terminals\Http\Requests\SetArchivedRequest;
 use App\Modules\Terminals\Models\Supervisor;
 use App\Modules\Terminals\Models\Terminal;
 use App\Modules\Terminals\Support\ArchiveFilter;
+use App\Support\Http\ReturnUrl;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -44,7 +46,7 @@ class TerminalController extends Controller
     public function store(SaveTerminalRequest $request, SaveTerminal $action): RedirectResponse
     {
         $terminal = $action->execute($request->user(), null, $request->string('name')->toString(), $request->input('location'), $request->integer('supervisor_id') ?: null);
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Terminal added.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Terminal added.')]);
 
         return to_route('admin.terminals.show', $terminal);
     }
@@ -65,22 +67,24 @@ class TerminalController extends Controller
         ]);
     }
 
-    public function edit(Terminal $terminal): Response
+    public function edit(Request $request, Terminal $terminal): Response
     {
         Gate::authorize('administer');
 
         return Inertia::render('admin/terminals/form', [
             'terminal' => $terminal->only(['id', 'name', 'location', 'supervisor_id']),
             'supervisors' => $this->supervisorOptions(),
+            // Save and Cancel return to where Edit was clicked: the list (with its filters) or this terminal's page.
+            'returnTo' => ReturnUrl::within($request->query('return'), '/admin/terminals', route('admin.terminals.show', $terminal, false)),
         ]);
     }
 
     public function update(SaveTerminalRequest $request, Terminal $terminal, SaveTerminal $action): RedirectResponse
     {
         $action->execute($request->user(), $terminal, $request->string('name')->toString(), $request->input('location'), $request->integer('supervisor_id') ?: null);
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Terminal changes saved.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Terminal changes saved.')]);
 
-        return to_route('admin.terminals.show', $terminal);
+        return redirect(ReturnUrl::within($request->input('return_to'), '/admin/terminals', route('admin.terminals.show', $terminal, false)));
     }
 
     public function archive(SetArchivedRequest $request, Terminal $terminal, SetRecordArchived $action): RedirectResponse

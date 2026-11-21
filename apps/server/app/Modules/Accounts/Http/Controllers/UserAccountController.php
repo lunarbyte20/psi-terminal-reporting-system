@@ -69,7 +69,7 @@ class UserAccountController extends Controller
             $request->user(), null, $request->string('name')->toString(), $request->string('email')->toString(),
             Role::from($request->string('role')->toString()), $request->integer('supervisor_id') ?: null,
         );
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Account created. Share the one-time password shown on this page.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Account created. Share the one-time password shown on this page.')]);
 
         return to_route('admin.users.edit', $result['user'])
             ->with('temporaryPassword', $result['temporary_password'])
@@ -103,7 +103,7 @@ class UserAccountController extends Controller
             $request->user(), $user, $request->string('name')->toString(), $request->string('email')->toString(),
             Role::from($request->string('role')->toString()), $request->integer('supervisor_id') ?: null,
         );
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Account changes saved.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Account changes saved.')]);
 
         return to_route('admin.users.edit', $user);
     }
@@ -121,7 +121,7 @@ class UserAccountController extends Controller
     {
         Gate::authorize('administer');
         $password = $action->execute(request()->user(), $user);
-        Inertia::flash('toast', ['type' => 'success', 'message' => 'Password reset. Share the new one-time password shown on this page.']);
+        Inertia::flash('toast', ['type' => 'success', 'message' => __('Password reset. Share the new one-time password shown on this page.')]);
 
         return to_route('admin.users.edit', $user)
             ->with('temporaryPassword', $password)

@@ -1,3 +1,4 @@
+import { t, useLocale } from '@/lib/i18n';
 import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
 import { formatPercent, formatPeso, formatDays } from '@/lib/format';
 import { cn } from '@/lib/utils';
@@ -12,6 +13,7 @@ export function WeekComparison({
     comparison: WeeklyReportDetails['comparison'];
     currentTotal: string;
 }) {
+    useLocale();
     const previousCents =
         comparison.previous === null ? null : toCentavos(comparison.previous);
     const variance =
@@ -49,21 +51,21 @@ export function WeekComparison({
             aria-labelledby="comparison-heading"
         >
             <h2 id="comparison-heading" className="text-base font-semibold">
-                Compared with last week
+                {t('Compared with last week')}
             </h2>
             {comparison.previous === null ? (
                 <p className="mt-2 text-sm text-muted-foreground">
-                    No approved report for{' '}
+                    {t('No approved report for')}{' '}
                     {comparison.previous_week
                         ? comparison.previous_week.label
                         : 'the previous week'}{' '}
-                    yet, so there is nothing to compare.
+                    {t('yet, so there is nothing to compare.')}
                 </p>
             ) : (
                 <dl className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
                     <div>
                         <dt className="text-xs text-muted-foreground">
-                            This week
+                            {t('This week')}
                         </dt>
                         <dd className="font-semibold tabular-nums">
                             {formatPeso(currentTotal)}
@@ -71,7 +73,8 @@ export function WeekComparison({
                     </div>
                     <div>
                         <dt className="text-xs text-muted-foreground">
-                            Last week ({comparison.previous_week?.label})
+                            {t('Last week (')}
+                            {t(comparison.previous_week?.label)})
                         </dt>
                         <dd className="font-semibold tabular-nums">
                             {formatPeso(comparison.previous)}
@@ -79,7 +82,7 @@ export function WeekComparison({
                     </div>
                     <div>
                         <dt className="text-xs text-muted-foreground">
-                            Change in pesos
+                            {t('Change in pesos')}
                         </dt>
                         <dd
                             className={cn(
@@ -95,11 +98,11 @@ export function WeekComparison({
                     </div>
                     <div>
                         <dt className="text-xs text-muted-foreground">
-                            Change in percent
+                            {t('Change in percent')}
                         </dt>
                         <dd className={cn('font-semibold tabular-nums', tone)}>
                             {percentChange === null
-                                ? 'Last week was ₱0'
+                                ? t('Last week was ₱0')
                                 : formatPercent(percentChange)}
                         </dd>
                     </div>
@@ -109,9 +112,11 @@ export function WeekComparison({
                 comparison.previous_week.days !== 7 &&
                 comparison.previous !== null && (
                     <p className="mt-3 text-xs text-muted-foreground">
-                        Last week had{' '}
-                        {formatDays(comparison.previous_week.days)}, so part of
-                        the change comes from the shorter week.
+                        {t('Last week had')}{' '}
+                        {formatDays(comparison.previous_week.days)}
+                        {t(
+                            ', so part of the change comes from the shorter week.',
+                        )}
                     </p>
                 )}
         </section>

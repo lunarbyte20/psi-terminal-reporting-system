@@ -1,6 +1,8 @@
+import { t, useLocale } from '@/lib/i18n';
 import { Head, Link, router, usePage } from '@inertiajs/react';
-import { Download, Plus, Printer } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { PageHeader, Panel } from '@/components/page-header';
+import { ReportExportsMenu } from '@/components/report-exports-menu';
 import { RefreshButton } from '@/components/refresh-button';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -35,50 +37,81 @@ function Metric({
     value: string;
     detail: React.ReactNode;
 }) {
+    useLocale();
     return (
         <article className="min-w-0 rounded-xl border bg-card p-4 sm:p-5 print:break-inside-avoid">
-            <p className="text-xs text-muted-foreground">{label}</p>
+            <p className="text-xs text-muted-foreground">{t(label)}</p>
             <p className="mt-2.5 mb-1 truncate text-xl font-bold text-primary tabular-nums sm:text-[23px]">
                 {value}
             </p>
-            <p className="text-xs text-muted-foreground">{detail}</p>
+            <p className="text-xs text-muted-foreground">{t(detail)}</p>
         </article>
     );
 }
 
 export default function Dashboard({
+    period,
     weeks,
     week,
+    months,
+    month,
     dashboard,
     issues,
 }: {
+    period: 'week' | 'month';
     weeks: ReportingWeek[];
     week: ReportingWeek | null;
+    months: { value: string; label: string }[];
+    month: { value: string; label: string } | null;
     dashboard: ExecutiveDashboard | null;
     issues: IssueSnapshotData;
 }) {
+    useLocale();
     const { auth } = usePage().props;
     const sales = dashboard?.totals.sales;
+    const hasSelection =
+        (period === 'week' && week !== null) ||
+        (period === 'month' && month !== null);
 
     return (
         <>
-            <Head title="Executive Dashboard" />
+            <Head title={t('Executive Dashboard')} />
             <main className="grid w-full grid-cols-1 gap-4 p-4 sm:p-6 lg:px-[3.5%] lg:py-8">
                 <PageHeader
-                    title="Executive Dashboard"
-                    description="Weekly performance at a glance."
+                    title={t('Executive Dashboard')}
+                    description={t('Weekly performance at a glance.')}
                     actions={
                         <>
-                            <span className="rounded-full bg-[#eeeeff] px-3 py-2 text-[10px] font-bold tracking-wider text-primary uppercase dark:bg-primary/20">
-                                {week
-                                    ? `Week of ${week.label}`
-                                    : 'No reporting week'}
+                            <span className="hidden rounded-full bg-[#eeeeff] px-3 py-2 text-[10px] font-bold tracking-wider text-primary uppercase sm:inline-block dark:bg-primary/20">
+                                {period === 'month' && month
+                                    ? month.label
+                                    : week
+                                      ? `Week of ${week.label}`
+                                      : t('No reporting week')}
                             </span>
+                            {period === 'week' && week && (
+                                <ReportExportsMenu
+                                    period={week.id}
+                                    periodTitle={`Week of ${week.label}`}
+                                    canViewManagementReport={
+                                        auth.can.viewAllTerminals
+                                    }
+                                />
+                            )}
+                            {period === 'month' && month && (
+                                <ReportExportsMenu
+                                    period={month.value}
+                                    periodTitle={t(month.label)}
+                                    canViewManagementReport={
+                                        auth.can.viewAllTerminals
+                                    }
+                                />
+                            )}
                             {auth.can.administer && (
                                 <Button asChild size="sm">
                                     <Link href="/admin/reporting-weeks">
                                         <Plus aria-hidden="true" />
-                                        New reporting week
+                                        {t('New reporting week')}
                                     </Link>
                                 </Button>
                             )}
@@ -86,75 +119,176 @@ export default function Dashboard({
                     }
                 />
 
-                {week === null || dashboard === null || sales === undefined ? (
+                {!hasSelection || dashboard === null || sales === undefined ? (
                     <div className="rounded-xl border bg-card p-6">
-                        <p className="font-medium">No reporting week yet</p>
+                        <p className="font-medium">
+                            {t('No reporting week yet')}
+                        </p>
                         <p className="mt-1 text-sm text-muted-foreground">
                             {auth.can.administer
-                                ? 'Add this month under Reporting weeks so reports can be encoded.'
-                                : 'The Admin needs to add this month’s reporting weeks.'}
+                                ? t(
+                                      'Add this month under Reporting weeks so reports can be encoded.',
+                                  )
+                                : t(
+                                      'The Admin needs to add this month’s reporting weeks.',
+                                  )}
                         </p>
                     </div>
                 ) : (
                     <>
                         <div className="flex flex-wrap items-end gap-3 print:hidden">
-                            <div className="min-w-60 space-y-1.5">
-                                <Label
-                                    htmlFor="dashboard-week"
-                                    className="text-xs"
-                                >
-                                    Reporting week
-                                </Label>
-                                <Select
-                                    value={String(week.id)}
-                                    onValueChange={(value) =>
-                                        router.get('/dashboard', {
-                                            week: value,
-                                        })
-                                    }
-                                >
-                                    <SelectTrigger
-                                        id="dashboard-week"
-                                        className="w-full bg-card"
+                            <div className="space-y-1.5">
+                                <span className="block text-xs font-medium">
+                                    {t('Period')}
+                                </span>
+                                <div className="inline-flex rounded-md border bg-card p-0.5">
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant={
+                                            period === 'week'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
+                                        className="h-8 px-3 text-xs"
+                                        onClick={() =>
+                                            router.get('/dashboard', {
+                                                period: 'week',
+                                                ...(week
+                                                    ? { week: week.id }
+                                                    : {}),
+                                            })
+                                        }
                                     >
-                                        <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {weeks.map((item) => (
-                                            <SelectItem
-                                                key={item.id}
-                                                value={String(item.id)}
-                                            >
-                                                {item.label}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
+                                        {t('By week')}
+                                    </Button>
+                                    <Button
+                                        type="button"
+                                        size="sm"
+                                        variant={
+                                            period === 'month'
+                                                ? 'default'
+                                                : 'ghost'
+                                        }
+                                        className="h-8 px-3 text-xs"
+                                        onClick={() =>
+                                            router.get('/dashboard', {
+                                                period: 'month',
+                                                ...(month
+                                                    ? { month: month.value }
+                                                    : {}),
+                                            })
+                                        }
+                                    >
+                                        {t('By month')}
+                                    </Button>
+                                </div>
                             </div>
+                            {period === 'week' && week ? (
+                                <div className="min-w-60 space-y-1.5">
+                                    <Label
+                                        htmlFor="dashboard-week"
+                                        className="text-xs"
+                                    >
+                                        {t('Reporting week')}
+                                    </Label>
+                                    <Select
+                                        value={String(week.id)}
+                                        onValueChange={(value) =>
+                                            router.get('/dashboard', {
+                                                period: 'week',
+                                                week: value,
+                                            })
+                                        }
+                                    >
+                                        <SelectTrigger
+                                            id="dashboard-week"
+                                            className="w-full bg-card"
+                                        >
+                                            <SelectValue />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            {weeks.map((item) => (
+                                                <SelectItem
+                                                    key={item.id}
+                                                    value={String(item.id)}
+                                                >
+                                                    {t(item.label)}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            ) : (
+                                month && (
+                                    <div className="min-w-52 space-y-1.5">
+                                        <Label
+                                            htmlFor="dashboard-month"
+                                            className="text-xs"
+                                        >
+                                            {t('Month')}
+                                        </Label>
+                                        <Select
+                                            value={month.value}
+                                            onValueChange={(value) =>
+                                                router.get('/dashboard', {
+                                                    period: 'month',
+                                                    month: value,
+                                                })
+                                            }
+                                        >
+                                            <SelectTrigger
+                                                id="dashboard-month"
+                                                className="w-full bg-card"
+                                            >
+                                                <SelectValue />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                {months.map((item) => (
+                                                    <SelectItem
+                                                        key={item.value}
+                                                        value={item.value}
+                                                    >
+                                                        {t(item.label)}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                )
+                            )}
                             <RefreshButton only={['dashboard']} />
                             <p className="text-xs text-muted-foreground sm:ml-auto">
-                                Counting approved reports only:{' '}
-                                {dashboard.progress.approved} of{' '}
-                                {dashboard.progress.terminals} terminals ·{' '}
-                                {dashboard.progress.waiting} waiting for review
-                                · {dashboard.progress.in_progress} in progress ·{' '}
-                                {dashboard.progress.not_started} not started ·
-                                due {formatDate(week.due_on)}
+                                {t('Counting approved reports only:')}{' '}
+                                {dashboard.progress.approved} {t('of')}{' '}
+                                {dashboard.progress.terminals}{' '}
+                                {period === 'month'
+                                    ? 'terminal-weeks'
+                                    : 'terminals'}{' '}
+                                · {dashboard.progress.waiting}{' '}
+                                {t('waiting for review ·')}
+                                {dashboard.progress.in_progress}{' '}
+                                {t('in progress ·')}
+                                {dashboard.progress.not_started}{' '}
+                                {t('not started')}
+                                {period === 'week' && week
+                                    ? ` · due ${formatDate(week.due_on)}`
+                                    : ''}
                             </p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
                             <Metric
-                                label="Total Sales"
+                                label={t('Total Sales')}
                                 value={formatPeso(sales.current)}
                                 detail={
                                     sales.direction === 'none'
-                                        ? 'No comparison yet'
+                                        ? t('No comparison yet')
                                         : `Previous ${formatPeso(sales.previous)}`
                                 }
                             />
                             <Metric
-                                label="Total Variance"
+                                label={t('Total Variance')}
                                 value={
                                     sales.variance === null
                                         ? '—'
@@ -174,12 +308,12 @@ export default function Dashboard({
                                 }
                             />
                             <Metric
-                                label="Total Ridership"
+                                label={t('Total Ridership')}
                                 value={formatCount(dashboard.totals.ridership)}
                                 detail={`${formatCount(dashboard.totals.trips)} trips recorded`}
                             />
                             <Metric
-                                label="Open Issues"
+                                label={t('Open Issues')}
                                 value={formatCount(issues.open)}
                                 detail={`${issues.overdue} overdue · ${issues.ceo_decision} need CEO decision`}
                             />
@@ -187,27 +321,16 @@ export default function Dashboard({
 
                         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                             <Panel
-                                title="Supervisor Performance"
-                                description="Current week sales ranking"
-                                action={
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => window.print()}
-                                    >
-                                        <Printer aria-hidden="true" />
-                                        Print / Save PDF
-                                    </Button>
-                                }
+                                title={t('Supervisor Performance')}
+                                description={t('Current week sales ranking')}
                             >
                                 <SupervisorRanking
                                     rows={dashboard.supervisor_ranking}
                                 />
                             </Panel>
                             <Panel
-                                title="Ridership by Vehicle Type"
-                                description="Passenger distribution"
+                                title={t('Ridership by Vehicle Type')}
+                                description={t('Passenger distribution')}
                             >
                                 <RidershipChart
                                     rows={dashboard.ridership_by_vehicle_type}
@@ -217,73 +340,89 @@ export default function Dashboard({
 
                         <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
                             <Panel
-                                title="Sales Distribution"
-                                description="Share of approved sales by supervisor"
+                                title={t('Sales Distribution')}
+                                description={t(
+                                    'Share of approved sales by supervisor',
+                                )}
                             >
                                 <SalesDistributionChart
                                     rows={dashboard.supervisor_ranking}
                                 />
                             </Panel>
                             <Panel
-                                title="Weekly Sales Trend"
-                                description="Approved sales over the last eight reporting weeks"
+                                title={t('Weekly Sales Trend')}
+                                description={t(
+                                    'Approved sales over the last eight reporting weeks',
+                                )}
                             >
                                 <WeeklySalesTrendChart
                                     weeks={dashboard.trend}
-                                    selectedWeekId={week.id}
+                                    selectedWeekId={
+                                        period === 'week' && week
+                                            ? week.id
+                                            : (dashboard.trend[
+                                                  dashboard.trend.length - 1
+                                              ]?.week_id ?? 0)
+                                    }
                                 />
                             </Panel>
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <Panel
-                                title="Top 3 Highest Sales"
-                                description="Terminal performance"
+                                title={t('Top 3 Highest Sales')}
+                                description={t('Terminal performance')}
                             >
                                 <RankList
                                     rows={dashboard.top_sales}
                                     show="sales"
-                                    empty="No approved reports yet."
+                                    empty={t('No approved reports yet.')}
                                 />
                             </Panel>
                             <Panel
-                                title="Top 3 Lowest Sales"
-                                description="Terminal performance"
+                                title={t('Top 3 Lowest Sales')}
+                                description={t('Terminal performance')}
                             >
                                 <RankList
                                     rows={dashboard.lowest_sales}
                                     show="sales"
-                                    empty="No approved reports yet."
+                                    empty={t('No approved reports yet.')}
                                 />
                             </Panel>
                         </div>
 
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                             <Panel
-                                title="Top 3 Percentage Increases"
-                                description="Compared with previous week"
+                                title={t('Top 3 Percentage Increases')}
+                                description={t('Compared with previous week')}
                             >
                                 <RankList
                                     rows={dashboard.biggest_increases}
                                     show="change"
-                                    empty="No terminal grew compared with an approved previous week."
+                                    empty={t(
+                                        'No terminal grew compared with an approved previous week.',
+                                    )}
                                 />
                             </Panel>
                             <Panel
-                                title="Top 3 Percentage Decreases"
-                                description="Compared with previous week"
+                                title={t('Top 3 Percentage Decreases')}
+                                description={t('Compared with previous week')}
                             >
                                 <RankList
                                     rows={dashboard.biggest_decreases}
                                     show="change"
-                                    empty="No terminal dropped compared with an approved previous week."
+                                    empty={t(
+                                        'No terminal dropped compared with an approved previous week.',
+                                    )}
                                 />
                             </Panel>
                         </div>
 
                         <Panel
-                            title="Terminal Sales Comparison"
-                            description="This week against the previous week, highest sales first"
+                            title={t('Terminal Sales Comparison')}
+                            description={t(
+                                'This week against the previous week, highest sales first',
+                            )}
                         >
                             <TerminalComparisonChart
                                 rows={dashboard.terminals}
@@ -291,29 +430,23 @@ export default function Dashboard({
                         </Panel>
 
                         <Panel
-                            title="Terminal Sales Breakdown"
-                            description="Every terminal's sales, previous week, variance, percentage change and ranking"
-                            action={
-                                <Button asChild variant="outline" size="sm">
-                                    <a
-                                        href={`/dashboard/${week.id}/terminal-sales.csv`}
-                                    >
-                                        <Download aria-hidden="true" />
-                                        Download Excel (CSV)
-                                    </a>
-                                </Button>
-                            }
+                            title={t('Terminal Sales Breakdown')}
+                            description={t(
+                                "Every terminal's sales, previous period, variance, percentage change and ranking",
+                            )}
                         >
                             <TerminalBreakdown rows={dashboard.terminals} />
                         </Panel>
 
                         <Panel
-                            title="Operational Issues Snapshot"
-                            description="Open actions remain visible until completed"
+                            title={t('Operational Issues Snapshot')}
+                            description={t(
+                                'Open actions remain visible until completed',
+                            )}
                             action={
                                 <Button asChild variant="outline" size="sm">
                                     <Link href="/issues">
-                                        View all issues →
+                                        {t('View all issues →')}
                                     </Link>
                                 </Button>
                             }
@@ -324,7 +457,7 @@ export default function Dashboard({
                 )}
 
                 <footer className="mt-4 text-[10px] text-muted-foreground">
-                    Park Solutions Inc. · Internal Management System
+                    {t('Park Solutions Inc. · Internal Management System')}
                 </footer>
             </main>
         </>
