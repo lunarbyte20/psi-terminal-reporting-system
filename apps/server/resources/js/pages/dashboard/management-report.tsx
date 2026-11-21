@@ -116,6 +116,16 @@ export default function ManagementReport({
                                 {t('Excel')}
                             </a>
                         </Button>
+                        <Button asChild variant="outline" size="sm">
+                            <a
+                                href={`/dashboard/${period.param}/management-report/pdf`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                <Printer aria-hidden="true" />
+                                {t('View PDF')}
+                            </a>
+                        </Button>
                         <Button
                             type="button"
                             size="sm"

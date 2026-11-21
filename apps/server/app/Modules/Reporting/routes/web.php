@@ -6,6 +6,7 @@ use App\Modules\Reporting\Http\Controllers\DashboardController;
 use App\Modules\Reporting\Http\Controllers\ExportTerminalSalesController;
 use App\Modules\Reporting\Http\Controllers\ExportTerminalSalesXlsxController;
 use App\Modules\Reporting\Http\Controllers\ManagementReportController;
+use App\Modules\Reporting\Http\Controllers\ManagementReportPdfController;
 use App\Modules\Reporting\Http\Controllers\ReportHistoryController;
 use App\Modules\Reporting\Http\Controllers\ReportingWeekController;
 use App\Modules\Reporting\Http\Controllers\ReportReviewController;
@@ -22,6 +23,8 @@ Route::get('dashboard/{period}/terminal-sales.xlsx', ExportTerminalSalesXlsxCont
     ->where('period', ResolveReportPeriod::PATTERN)->middleware('throttle:30,1')->name('dashboard.export-xlsx');
 Route::get('dashboard/{period}/management-report', ManagementReportController::class)
     ->where('period', ResolveReportPeriod::PATTERN)->name('dashboard.management-report');
+Route::get('dashboard/{period}/management-report/pdf', ManagementReportPdfController::class)
+    ->where('period', ResolveReportPeriod::PATTERN)->middleware('throttle:20,1')->name('dashboard.management-report-pdf');
 Route::get('history', ReportHistoryController::class)->name('history.index');
 Route::get('ridership', RidershipController::class)->name('ridership.index');
 

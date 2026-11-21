@@ -1,6 +1,5 @@
 import { t, useLocale } from '@/lib/i18n';
 import { formatCount, formatPeso } from '@/lib/format';
-import { useId } from 'react';
 import type { SupervisorResult, TerminalResult } from './types';
 
 /** Spec palette: navy, teal, gold, lavender, peach, green, blue, plus a neutral. */
@@ -28,126 +27,201 @@ function compactPeso(value: number): string {
 
 type Slice = { key: string; label: string; value: number; display: string };
 
-/** A donut (pie) chart with a legend of label, share and value. */
+type Callout = {
+    slice: Slice;
+    dotX: number;
+    dotY: number;
+    elbowX: number;
+    elbowY: number;
+    lineEndX: number;
+    labelY: number;
+    isLeft: boolean;
+    pct: string;
+};
+
+function resolveSideY(
+    items: Callout[],
+    minY: number,
+    maxY: number,
+    minGap: number,
+): void {
+    items.sort((a, b) => a.elbowY - b.elbowY);
+    for (let i = 1; i < items.length; i++) {
+        if (items[i].labelY - items[i - 1].labelY < minGap) {
+            items[i].labelY = items[i - 1].labelY + minGap;
+        }
+    }
+    if (items.length > 0 && items[items.length - 1].labelY > maxY) {
+        const overflow = items[items.length - 1].labelY - maxY;
+        items[items.length - 1].labelY -= overflow;
+        for (let i = items.length - 2; i >= 0; i--) {
+            if (items[i + 1].labelY - items[i].labelY < minGap) {
+                items[i].labelY = items[i + 1].labelY - minGap;
+            }
+        }
+    }
+    if (items.length > 0 && items[0].labelY < minY) {
+        const underflow = minY - items[0].labelY;
+        items[0].labelY += underflow;
+        for (let i = 1; i < items.length; i++) {
+            if (items[i].labelY - items[i - 1].labelY < minGap) {
+                items[i].labelY = items[i - 1].labelY + minGap;
+            }
+        }
+    }
+}
+
+function slicePath(
+    cx: number,
+    cy: number,
+    r: number,
+    startAngle: number,
+    endAngle: number,
+): string {
+    const x1 = cx + Math.cos(startAngle) * r;
+    const y1 = cy + Math.sin(startAngle) * r;
+    const x2 = cx + Math.cos(endAngle) * r;
+    const y2 = cy + Math.sin(endAngle) * r;
+    const largeArc = endAngle - startAngle > Math.PI ? 1 : 0;
+
+    return `M ${cx},${cy} L ${x1},${y1} A ${r},${r} 0 ${largeArc},1 ${x2},${y2} Z`;
+}
+
+/** A pie chart with dot-and-elbow callout leader lines and a breakdown legend. */
 export function DonutChart({
     slices,
-    totalLabel,
     ariaLabel,
     empty,
 }: {
     slices: Slice[];
-    totalLabel: string;
+    totalLabel?: string;
     ariaLabel: string;
     empty: string;
 }) {
     useLocale();
-    const arrowId = `donut-arrow-${useId().replace(/:/g, '')}`;
     const total = slices.reduce((sum, slice) => sum + slice.value, 0);
     if (total === 0) {
         return <p className="py-3 text-sm text-muted-foreground">{empty}</p>;
     }
 
-    const radius = 60;
-    const circumference = 2 * Math.PI * radius;
-    let offset = 0;
-    const sliceOffsets = new Map<string, number>();
-    slices.forEach((slice) => {
-        sliceOffsets.set(slice.key, offset);
-        offset += (slice.value / total) * circumference;
+    const cx = 190;
+    const cy = 105;
+    const r = 64;
+    const dotR = r * 0.72;
+    const elbowR = r + 14;
+    const leftEndX = cx - r - 28;
+    const rightEndX = cx + r + 28;
+
+    const nonZero = slices.filter((s) => s.value > 0);
+    let currentAngle = -Math.PI / 2;
+    const paths: { slice: Slice; color: string; d: string | null }[] = [];
+    const callouts: Callout[] = [];
+
+    slices.forEach((slice, index) => {
+        const color = CHART_COLORS[index % CHART_COLORS.length];
+        if (slice.value <= 0) return;
+
+        const sweep = (slice.value / total) * Math.PI * 2;
+        const startAngle = currentAngle;
+        const endAngle = currentAngle + sweep;
+        const midAngle = startAngle + sweep / 2;
+        currentAngle = endAngle;
+
+        paths.push({
+            slice,
+            color,
+            d:
+                nonZero.length === 1
+                    ? null
+                    : slicePath(cx, cy, r, startAngle, endAngle),
+        });
+
+        const isLeft = Math.cos(midAngle) < -0.02;
+        const elbowX = cx + Math.cos(midAngle) * elbowR;
+        const elbowY = cy + Math.sin(midAngle) * elbowR;
+
+        callouts.push({
+            slice,
+            dotX: cx + Math.cos(midAngle) * dotR,
+            dotY: cy + Math.sin(midAngle) * dotR,
+            elbowX,
+            elbowY,
+            lineEndX: isLeft ? leftEndX : rightEndX,
+            labelY: elbowY,
+            isLeft,
+            pct: ((slice.value / total) * 100).toFixed(1),
+        });
     });
-    offset = 0;
+
+    const leftCallouts = callouts.filter((c) => c.isLeft);
+    const rightCallouts = callouts.filter((c) => !c.isLeft);
+    resolveSideY(leftCallouts, 18, 192, 24);
+    resolveSideY(rightCallouts, 18, 192, 24);
 
     return (
-        // Sized by its own box, not the screen: beside the legend when wide, above it when narrow (e.g. half a printed page).
         <div className="@container">
             <div className="flex flex-col items-center gap-4 @md:flex-row @md:items-start">
                 <svg
-                    viewBox="0 0 160 160"
-                    className="size-40 shrink-0 print:size-32"
+                    viewBox="0 0 380 210"
+                    className="h-auto w-full max-w-[360px] shrink-0 print:max-w-[260px]"
                     role="img"
                     aria-label={t(ariaLabel)}
                 >
-                    <defs>
-                        <marker
-                            id={arrowId}
-                            markerWidth="5"
-                            markerHeight="5"
-                            refX="4"
-                            refY="2.5"
-                            orient="auto"
-                        >
-                            <path d="M0,0 L5,2.5 L0,5 Z" fill="#262626" />
-                        </marker>
-                    </defs>
-                    <g transform="rotate(-90 80 80)">
-                        {slices.map((slice, index) => {
-                            const length =
-                                (slice.value / total) * circumference;
-                            const segment = (
-                                <circle
-                                    key={slice.key}
-                                    cx="80"
-                                    cy="80"
-                                    r={radius}
-                                    fill="none"
-                                    stroke={
-                                        CHART_COLORS[
-                                            index % CHART_COLORS.length
-                                        ]
-                                    }
-                                    strokeWidth="26"
-                                    strokeDasharray={`${length} ${circumference - length}`}
-                                    strokeDashoffset={-offset}
-                                />
-                            );
-                            offset += length;
-
-                            return segment;
-                        })}
-                    </g>
-                    {slices
-                        .filter((slice) => slice.value > 0)
-                        .map((slice) => {
-                            const length =
-                                (slice.value / total) * circumference;
-                            const angle =
-                                ((sliceOffsets.get(slice.key)! + length / 2) /
-                                    circumference) *
-                                    2 *
-                                    Math.PI -
-                                Math.PI / 2;
-                            const outer = 75;
-                            const inner = 49;
-                            return (
-                                <line
-                                    key={`arrow-${slice.key}`}
-                                    x1={80 + Math.cos(angle) * outer}
-                                    y1={80 + Math.sin(angle) * outer}
-                                    x2={80 + Math.cos(angle) * inner}
-                                    y2={80 + Math.sin(angle) * inner}
-                                    stroke="#262626"
-                                    strokeWidth="1.5"
-                                    markerEnd={`url(#${arrowId})`}
-                                    aria-hidden="true"
-                                />
-                            );
-                        })}
-                    <text
-                        x="80"
-                        y="76"
-                        textAnchor="middle"
-                        className="fill-muted-foreground text-[9px]"
-                    >
-                        {t('Total')}
-                    </text>
-                    <text
-                        x="80"
-                        y="92"
-                        textAnchor="middle"
-                        className="fill-foreground text-[12px] font-bold"
-                    >
-                        {totalLabel}
-                    </text>
+                    {paths.map(({ slice, color, d }) =>
+                        d === null ? (
+                            <circle
+                                key={slice.key}
+                                cx={cx}
+                                cy={cy}
+                                r={r}
+                                fill={color}
+                                stroke="#ffffff"
+                                strokeWidth="1.5"
+                            />
+                        ) : (
+                            <path
+                                key={slice.key}
+                                d={d}
+                                fill={color}
+                                stroke="#ffffff"
+                                strokeWidth="1.5"
+                            />
+                        ),
+                    )}
+                    {callouts.map((c) => (
+                        <g key={`callout-${c.slice.key}`} aria-hidden="true">
+                            <polyline
+                                points={`${c.dotX},${c.dotY} ${c.elbowX},${c.labelY} ${c.lineEndX},${c.labelY}`}
+                                fill="none"
+                                stroke="#334155"
+                                strokeWidth="1"
+                            />
+                            <circle
+                                cx={c.dotX}
+                                cy={c.dotY}
+                                r="2.6"
+                                fill="#1e293b"
+                                stroke="#ffffff"
+                                strokeWidth="1.2"
+                            />
+                            <text
+                                x={c.isLeft ? c.lineEndX - 4 : c.lineEndX + 4}
+                                y={c.labelY - 1}
+                                textAnchor={c.isLeft ? 'end' : 'start'}
+                                className="fill-foreground text-[10px] font-bold tabular-nums"
+                            >
+                                {c.slice.display}
+                            </text>
+                            <text
+                                x={c.isLeft ? c.lineEndX - 4 : c.lineEndX + 4}
+                                y={c.labelY + 10}
+                                textAnchor={c.isLeft ? 'end' : 'start'}
+                                className="fill-muted-foreground text-[9px] tabular-nums"
+                            >
+                                {c.pct}%
+                            </text>
+                        </g>
+                    ))}
                 </svg>
                 <ul className="w-full space-y-1.5 text-xs print:space-y-0.5 print:text-[10px]">
                     {slices.map((slice, index) => (

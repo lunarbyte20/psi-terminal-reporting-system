@@ -1,5 +1,4 @@
 import { t, useLocale } from '@/lib/i18n';
-import { Link } from '@inertiajs/react';
 import {
     ChevronDown,
     Eye,
@@ -67,19 +66,26 @@ export function ReportExportsMenu({
                                 {t('Management report')}
                             </DropdownMenuLabel>
                             <DropdownMenuItem asChild>
-                                <Link href={report} className="cursor-pointer">
+                                <a
+                                    href={report}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="cursor-pointer"
+                                >
                                     <Eye aria-hidden="true" />
                                     {t('View report')}
-                                </Link>
+                                </a>
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
-                                <Link
-                                    href={`${report}?print=1`}
+                                <a
+                                    href={`${report}/pdf`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="cursor-pointer"
                                 >
                                     <Printer aria-hidden="true" />
-                                    {t('Print or save as PDF')}
-                                </Link>
+                                    {t('View PDF')}
+                                </a>
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
                     </>

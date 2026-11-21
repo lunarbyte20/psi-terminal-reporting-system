@@ -112,6 +112,13 @@ class DashboardExportsAndPeriodsTest extends TestCase
                 ->where('period.kind', 'week')
                 ->where('evaluations.0.key_concerns', 'Power outage')
                 ->where('evaluations.0.sections.operational', 'All shifts covered.'));
+
+        $this->actingAs($supUser)->get(route('dashboard.management-report-pdf', $this->week))->assertForbidden();
+
+        $pdfResponse = $this->actingAs($ceo)->get(route('dashboard.management-report-pdf', $this->week));
+        $pdfResponse->assertOk();
+        $this->assertSame('application/pdf', $pdfResponse->headers->get('content-type'));
+        $this->assertStringContainsString('inline;', (string) $pdfResponse->headers->get('content-disposition'));
     }
 
     public function test_monthly_report_and_exports_cover_every_started_week_of_the_month(): void
