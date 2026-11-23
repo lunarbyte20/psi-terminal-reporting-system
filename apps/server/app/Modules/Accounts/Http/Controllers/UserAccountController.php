@@ -42,6 +42,7 @@ class UserAccountController extends Controller
                 'supervisor' => $user->supervisor?->name,
                 'active' => $user->isActive(),
                 'awaiting_first_sign_in' => $user->must_change_password,
+                'is_self' => $user->is($request->user()),
             ]);
 
         return Inertia::render('admin/users/index', [

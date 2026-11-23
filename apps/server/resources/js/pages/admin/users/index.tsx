@@ -1,7 +1,8 @@
 import { t, useLocale } from '@/lib/i18n';
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, router } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Pencil, Plus } from 'lucide-react';
+import { Pencil, Plus, RotateCcw, Trash2 } from 'lucide-react';
+import { useState } from 'react';
 import { DataTable } from '@/components/data-table';
 import Heading from '@/components/heading';
 import { ListFilters } from '@/components/list-filters';
@@ -10,6 +11,15 @@ import { RequirementGuide } from '@/components/requirement-guide';
 import { RowAction } from '@/components/row-action';
 import { StatusBadge } from '@/components/status-badge';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from '@/components/ui/dialog';
 import type { Option, Paginated } from '@/types';
 
 type AccountRow = {
@@ -20,6 +30,7 @@ type AccountRow = {
     supervisor: string | null;
     active: boolean;
     awaiting_first_sign_in: boolean;
+    is_self: boolean;
 };
 
 export default function UserAccounts({
@@ -32,10 +43,25 @@ export default function UserAccounts({
     users: Paginated<AccountRow>;
 }) {
     useLocale();
+    const [pendingDelete, setPendingDelete] = useState<AccountRow | null>(null);
+    const [busyId, setBusyId] = useState<number | null>(null);
     const filtered =
         filters.q !== '' ||
         filters.role !== 'all' ||
         filters.status !== 'active';
+
+    function setAccountActive(account: AccountRow, active: boolean) {
+        router.post(
+            `/admin/users/${account.id}/status`,
+            { active },
+            {
+                preserveScroll: true,
+                onStart: () => setBusyId(account.id),
+                onSuccess: () => setPendingDelete(null),
+                onFinish: () => setBusyId(null),
+            },
+        );
+    }
 
     const columns: ColumnDef<AccountRow>[] = [
         {
@@ -83,12 +109,50 @@ export default function UserAccounts({
             id: 'actions',
             header: t('ACTION'),
             cell: ({ row }) => (
-                <RowAction
-                    href={`/admin/users/${row.original.id}/edit`}
-                    icon={Pencil}
-                    tone="edit"
-                    label={t('Edit :0', { '0': row.original.name })}
-                />
+                <div className="flex items-center gap-1.5">
+                    <RowAction
+                        href={`/admin/users/${row.original.id}/edit`}
+                        icon={Pencil}
+                        tone="edit"
+                        label={t('Edit :0', { '0': row.original.name })}
+                    />
+                    {!row.original.is_self &&
+                        (row.original.active ? (
+                            <RowAction
+                                icon={Trash2}
+                                tone="delete"
+                                label={t('Delete :0', {
+                                    '0': row.original.name,
+                                })}
+                                trigger={(button) => (
+                                    <span
+                                        onClick={() =>
+                                            setPendingDelete(row.original)
+                                        }
+                                    >
+                                        {button}
+                                    </span>
+                                )}
+                            />
+                        ) : (
+                            <RowAction
+                                icon={RotateCcw}
+                                tone="restore"
+                                label={t('Reactivate :0', {
+                                    '0': row.original.name,
+                                })}
+                                trigger={(button) => (
+                                    <span
+                                        onClick={() =>
+                                            setAccountActive(row.original, true)
+                                        }
+                                    >
+                                        {button}
+                                    </span>
+                                )}
+                            />
+                        ))}
+                </div>
             ),
         },
     ];
@@ -195,6 +259,52 @@ export default function UserAccounts({
                     emptyAction={addButton}
                 />
             </main>
+
+            <Dialog
+                open={pendingDelete !== null}
+                onOpenChange={(open) => {
+                    if (!open) setPendingDelete(null);
+                }}
+            >
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {pendingDelete
+                                ? t('Delete :0?', { '0': pendingDelete.name })
+                                : ''}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {t(
+                                'This deactivates the account, signs them out immediately, and preserves all past reports, issues, and audit history. You can reactivate it later if needed.',
+                            )}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <DialogClose asChild>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                disabled={busyId !== null}
+                            >
+                                {t('Cancel')}
+                            </Button>
+                        </DialogClose>
+                        <Button
+                            type="button"
+                            variant="destructive"
+                            disabled={pendingDelete === null || busyId !== null}
+                            onClick={() =>
+                                pendingDelete &&
+                                setAccountActive(pendingDelete, false)
+                            }
+                        >
+                            {busyId !== null
+                                ? t('Saving…')
+                                : t('Delete account')}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }
