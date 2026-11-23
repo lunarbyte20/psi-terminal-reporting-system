@@ -60,11 +60,17 @@ class GetMonthlyRidership
                 ->groupBy('vehicle_types.id', 'vehicle_types.name')
                 ->orderByDesc(DB::raw('sum(ridership_lines.ridership)'))
                 ->get(['vehicle_types.name', ...$sums]), 'name'),
-            'terminals' => $rows($base()
+            'terminals' => array_values($base()
                 ->join('terminals', 'terminals.id', '=', 'weekly_reports.terminal_id')
                 ->groupBy('terminals.id', 'terminals.name')
                 ->orderByDesc(DB::raw('sum(ridership_lines.ridership)'))
-                ->get(['terminals.name', ...$sums]), 'name'),
+                ->get(['terminals.id', 'terminals.name', ...$sums])
+                ->map(fn (stdClass $row) => [
+                    'id' => (int) $row->id,
+                    'name' => (string) $row->name,
+                    'ridership' => (int) $row->ridership,
+                    'trips' => (int) $row->trips,
+                ])->all()),
             'supervisors' => $rows($base()
                 ->leftJoin('supervisors', 'supervisors.id', '=', 'weekly_reports.supervisor_id')
                 ->groupBy('supervisors.id', 'supervisors.name')

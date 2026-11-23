@@ -6,6 +6,7 @@ import {
     SidebarMenu,
     SidebarMenuButton,
     SidebarMenuItem,
+    useSidebar,
 } from '@/components/ui/sidebar';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import type { NavItem } from '@/types';
@@ -18,6 +19,7 @@ export function NavMain({
     label?: string;
 }) {
     useLocale();
+    const { isMobile, setOpenMobile } = useSidebar();
     // Stays highlighted on a section's detail and edit pages, e.g. /reports/5/edit.
     const { isCurrentOrParentUrl } = useCurrentUrl();
 
@@ -27,20 +29,35 @@ export function NavMain({
                 {t(label)}
             </SidebarGroupLabel>
             <SidebarMenu>
-                {items.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton
-                            asChild
-                            isActive={isCurrentOrParentUrl(item.href)}
-                            tooltip={{ children: item.title }}
-                        >
-                            <Link href={item.href} prefetch>
-                                {item.icon && <item.icon />}
-                                <span>{t(item.title)}</span>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                ))}
+                {items.map((item) => {
+                    const active =
+                        isCurrentOrParentUrl(item.href) &&
+                        !(
+                            item.href === '/reports' &&
+                            isCurrentOrParentUrl('/reports/monthly')
+                        );
+
+                    return (
+                        <SidebarMenuItem key={item.title}>
+                            <SidebarMenuButton
+                                asChild
+                                isActive={active}
+                                tooltip={{ children: item.title }}
+                            >
+                                <Link
+                                    href={item.href}
+                                    prefetch
+                                    onClick={() =>
+                                        isMobile && setOpenMobile(false)
+                                    }
+                                >
+                                    {item.icon && <item.icon />}
+                                    <span>{t(item.title)}</span>
+                                </Link>
+                            </SidebarMenuButton>
+                        </SidebarMenuItem>
+                    );
+                })}
             </SidebarMenu>
         </SidebarGroup>
     );

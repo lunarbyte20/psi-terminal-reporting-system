@@ -55,7 +55,7 @@ export default function UserAccountFormPage({
     return (
         <>
             <Head title={t(title)} />
-            <main className="grid w-full grid-cols-1 gap-6 p-4 pb-32 sm:p-6 sm:pb-32">
+            <main className="grid w-full grid-cols-1 gap-6 p-4 pb-32 sm:p-6 sm:pb-32 lg:px-[3.5%] lg:py-8 lg:pb-32">
                 <Heading
                     title={t(title)}
                     description={
@@ -103,7 +103,7 @@ export default function UserAccountFormPage({
                         account ? `/admin/users/${account.id}` : '/admin/users'
                     }
                     method={account ? 'put' : 'post'}
-                    className="max-w-3xl space-y-5"
+                    className="w-full space-y-5"
                     disableWhileProcessing
                 >
                     {({ errors, processing }) => (

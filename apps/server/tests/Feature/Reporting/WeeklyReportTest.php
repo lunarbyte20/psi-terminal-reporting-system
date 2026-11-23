@@ -284,6 +284,48 @@ class WeeklyReportTest extends TestCase
         $this->assertDatabaseCount('weekly_reports', 1);
     }
 
+    public function test_returning_or_reopening_a_report_notifies_the_supervisor(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+        $report = $this->startReport();
+        $report->forceFill(['status' => ReportStatus::Submitted])->save();
+
+        $this->actingAs($admin)->post(route('reports.review', $report), [
+            'decision' => 'return',
+            'reason' => 'Check dispatch total.',
+        ])->assertRedirect();
+
+        $notification = $this->supervisorUser->fresh()->notifications()->sole();
+        $this->assertSame('Report returned for correction: SM Sta. Rosa', $notification->data['title']);
+        $this->assertStringContainsString('Check dispatch total.', $notification->data['body']);
+        $this->assertSame("/reports/{$report->id}/edit", $notification->data['url']);
+
+        // Approving and then reopening also notifies the supervisor.
+        $report->forceFill(['status' => ReportStatus::Approved])->save();
+        $this->actingAs($admin)->post(route('reports.review', $report), [
+            'decision' => 'reopen',
+            'reason' => 'Reopened to fix membership fee.',
+        ])->assertRedirect();
+
+        $this->assertSame(2, $this->supervisorUser->fresh()->notifications()->count());
+    }
+
+    public function test_supervisor_can_request_correction_on_approved_report(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+        $report = $this->startReport();
+        $report->forceFill(['status' => ReportStatus::Approved])->save();
+
+        $this->actingAs($this->supervisorUser)
+            ->post(route('reports.request-reopen', $report), ['reason' => 'Wrong sticker amount entered.'])
+            ->assertRedirect(route('reports.show', $report));
+
+        $notification = $admin->fresh()->notifications()->sole();
+        $this->assertSame('Correction requested: SM Sta. Rosa', $notification->data['title']);
+        $this->assertStringContainsString('Wrong sticker amount entered.', $notification->data['body']);
+        $this->assertSame("/reports/{$report->id}", $notification->data['url']);
+    }
+
     private function startReport(): WeeklyReport
     {
         return WeeklyReport::query()->create([

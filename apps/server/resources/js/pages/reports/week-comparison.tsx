@@ -1,5 +1,10 @@
 import { t, useLocale } from '@/lib/i18n';
-import { ArrowDownRight, ArrowUpRight, Minus } from 'lucide-react';
+import {
+    AlertTriangle,
+    ArrowDownRight,
+    ArrowUpRight,
+    Minus,
+} from 'lucide-react';
 import { formatPercent, formatPeso, formatDays } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import { toCentavos } from '@/lib/report-totals';
@@ -9,9 +14,11 @@ import type { WeeklyReportDetails } from '@/types';
 export function WeekComparison({
     comparison,
     currentTotal,
+    compact = false,
 }: {
     comparison: WeeklyReportDetails['comparison'];
     currentTotal: string;
+    compact?: boolean;
 }) {
     useLocale();
     const previousCents =
@@ -32,6 +39,10 @@ export function WeekComparison({
         previousCents === null || previousCents === 0
             ? null
             : (variance! / previousCents) * 100;
+    const isOutlier =
+        percentChange !== null &&
+        toCentavos(currentTotal) > 0 &&
+        (percentChange >= 100 || percentChange <= -50);
     const tone = {
         up: 'text-status-success-fg',
         down: 'text-status-danger-fg',
@@ -47,7 +58,7 @@ export function WeekComparison({
 
     return (
         <section
-            className="rounded-lg border bg-card p-5 sm:p-6"
+            className="rounded-xl border border-t-[3px] border-t-primary bg-card p-5 sm:p-6"
             aria-labelledby="comparison-heading"
         >
             <h2 id="comparison-heading" className="text-base font-semibold">
@@ -62,31 +73,36 @@ export function WeekComparison({
                     {t('yet, so there is nothing to compare.')}
                 </p>
             ) : (
-                <dl className="mt-3 grid grid-cols-2 gap-4 sm:grid-cols-4">
-                    <div>
+                <dl
+                    className={cn(
+                        'mt-3 grid grid-cols-2 gap-3',
+                        !compact && 'sm:grid-cols-4',
+                    )}
+                >
+                    <div className="rounded-lg border bg-muted/35 p-3">
                         <dt className="text-xs text-muted-foreground">
                             {t('This week')}
                         </dt>
-                        <dd className="font-semibold tabular-nums">
+                        <dd className="mt-0.5 font-semibold tabular-nums">
                             {formatPeso(currentTotal)}
                         </dd>
                     </div>
-                    <div>
+                    <div className="rounded-lg border bg-muted/35 p-3">
                         <dt className="text-xs text-muted-foreground">
                             {t('Last week (')}
                             {t(comparison.previous_week?.label)})
                         </dt>
-                        <dd className="font-semibold tabular-nums">
+                        <dd className="mt-0.5 font-semibold tabular-nums">
                             {formatPeso(comparison.previous)}
                         </dd>
                     </div>
-                    <div>
+                    <div className="rounded-lg border bg-muted/35 p-3">
                         <dt className="text-xs text-muted-foreground">
                             {t('Change in pesos')}
                         </dt>
                         <dd
                             className={cn(
-                                'flex items-center gap-1 font-semibold tabular-nums',
+                                'mt-0.5 flex items-center gap-1 font-semibold tabular-nums',
                                 tone,
                             )}
                         >
@@ -96,11 +112,16 @@ export function WeekComparison({
                             )}
                         </dd>
                     </div>
-                    <div>
+                    <div className="rounded-lg border bg-muted/35 p-3">
                         <dt className="text-xs text-muted-foreground">
                             {t('Change in percent')}
                         </dt>
-                        <dd className={cn('font-semibold tabular-nums', tone)}>
+                        <dd
+                            className={cn(
+                                'mt-0.5 font-semibold tabular-nums',
+                                tone,
+                            )}
+                        >
                             {percentChange === null
                                 ? t('Last week was ₱0')
                                 : formatPercent(percentChange)}
@@ -119,6 +140,22 @@ export function WeekComparison({
                         )}
                     </p>
                 )}
+            {isOutlier && (
+                <div
+                    role="status"
+                    className="mt-3 flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-xs text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
+                >
+                    <AlertTriangle
+                        aria-hidden="true"
+                        className="mt-0.5 size-4 shrink-0 text-amber-600 dark:text-amber-400"
+                    />
+                    <span>
+                        {t(
+                            'Large change from last week — please double-check your figures before submitting.',
+                        )}
+                    </span>
+                </div>
+            )}
         </section>
     );
 }

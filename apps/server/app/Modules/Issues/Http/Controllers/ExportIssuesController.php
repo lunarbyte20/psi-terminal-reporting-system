@@ -8,7 +8,15 @@ use App\Modules\Issues\Http\Requests\ListIssuesRequest;
 use App\Modules\Issues\Models\OperationalIssue;
 use OpenSpout\Common\Entity\Cell;
 use OpenSpout\Common\Entity\Row;
+use OpenSpout\Common\Entity\Style\Border;
+use OpenSpout\Common\Entity\Style\BorderName;
+use OpenSpout\Common\Entity\Style\BorderPart;
+use OpenSpout\Common\Entity\Style\BorderStyle;
+use OpenSpout\Common\Entity\Style\BorderWidth;
+use OpenSpout\Common\Entity\Style\CellAlignment;
+use OpenSpout\Common\Entity\Style\CellVerticalAlignment;
 use OpenSpout\Common\Entity\Style\Style;
+use OpenSpout\Writer\XLSX\Entity\SheetView;
 use OpenSpout\Writer\XLSX\Writer;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -44,19 +52,51 @@ class ExportIssuesController extends Controller
         $path = tempnam(sys_get_temp_dir(), 'psi-issues-');
         abort_if($path === false, 500);
         $writer = new Writer;
+        $generated = 'Generated '.now()->setTimezone((string) config('app.display_timezone'))->format('M j, Y H:i');
+
+        $thinBottom = new Border(new BorderPart(BorderName::BOTTOM, 'CBD5E1', BorderWidth::THIN, BorderStyle::SOLID));
+        $titleStyle = (new Style)->withFontName('Calibri')->withFontSize(13)->withFontBold(true)->withFontColor('1A1990');
+        $subtitleStyle = (new Style)->withFontName('Calibri')->withFontSize(9)->withFontColor('475569');
+        $headerStyle = (new Style)->withFontName('Calibri')->withFontSize(10)->withFontBold(true)->withFontColor('FFFFFF')->withBackgroundColor('1E3A8A')->withCellAlignment(CellAlignment::LEFT)->withCellVerticalAlignment(CellVerticalAlignment::CENTER);
+        $baseCell = (new Style)->withFontName('Calibri')->withFontSize(10)->withCellAlignment(CellAlignment::LEFT)->withCellVerticalAlignment(CellVerticalAlignment::CENTER)->withBorder($thinBottom);
+        $zebraCell = $baseCell->withBackgroundColor('F8FAFC');
+
         try {
             $writer->openToFile($path);
-            $writer->getCurrentSheet()->setName('Issues');
-            $writer->addRow(Row::fromValues([__('Issue'), __('Terminal'), __('Status'), __('Issue tags'), __('Tag color')]));
+            $sheet = $writer->getCurrentSheet();
+            $sheet->setName('Issues');
+            $sheet->setSheetView((new SheetView)->withFreezeRow(5));
+            $sheet->setColumnWidth(44.0, 1);
+            $sheet->setColumnWidth(24.0, 2);
+            $sheet->setColumnWidth(16.0, 3);
+            $sheet->setColumnWidth(22.0, 4);
+            $sheet->setColumnWidth(12.0, 5);
+
+            $writer->addRow(new Row([Cell::fromValue('PSI OPERATIONAL ISSUES & ACTION ITEMS', $titleStyle)]));
+            $writer->addRow(new Row([Cell::fromValue($generated, $subtitleStyle)]));
+            $writer->addRow(Row::fromValues(['']));
+            $writer->addRow(new Row([
+                Cell::fromValue(__('Issue'), $headerStyle),
+                Cell::fromValue(__('Terminal'), $headerStyle),
+                Cell::fromValue(__('Status'), $headerStyle),
+                Cell::fromValue(__('Issue tags'), $headerStyle),
+                Cell::fromValue(__('Tag color'), $headerStyle),
+            ]));
+
+            $rowIndex = 0;
             foreach ($list->query($request->user(), $request->filters())->lazy(100) as $issue) {
+                $cellStyle = $rowIndex % 2 === 1 ? $zebraCell : $baseCell;
                 if ($issue->tags->isEmpty()) {
-                    $writer->addRow(Row::fromValues($this->values($issue)));
+                    $writer->addRow(new Row(array_map(fn (string $v) => Cell::fromValue($v, $cellStyle), $this->values($issue))));
+                    $rowIndex++;
                 } else {
                     foreach ($issue->tags as $tag) {
-                        $cells = array_map(fn (string $value) => Cell::fromValue($value), array_slice($this->values($issue), 0, 3));
-                        $cells[] = Cell::fromValue(self::safe($tag->name), (new Style)->withBackgroundColor(ltrim($tag->color, '#'))->withFontColor(self::foreground($tag->color)));
-                        $cells[] = Cell::fromValue($tag->color);
+                        $cellStyle = $rowIndex % 2 === 1 ? $zebraCell : $baseCell;
+                        $cells = array_map(fn (string $value) => Cell::fromValue($value, $cellStyle), array_slice($this->values($issue), 0, 3));
+                        $cells[] = Cell::fromValue(self::safe($tag->name), $baseCell->withBackgroundColor(ltrim($tag->color, '#'))->withFontColor(self::foreground($tag->color)));
+                        $cells[] = Cell::fromValue($tag->color, $cellStyle);
                         $writer->addRow(new Row($cells));
+                        $rowIndex++;
                     }
                 }
             }

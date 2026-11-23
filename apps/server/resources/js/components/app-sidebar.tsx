@@ -48,6 +48,11 @@ export function AppSidebar() {
             href: '/reports',
             icon: ClipboardList,
         },
+        {
+            title: t('Monthly summary'),
+            href: '/reports/monthly',
+            icon: CalendarRange,
+        },
         { title: t('Issues & Actions'), href: '/issues', icon: CircleAlert },
     ];
 

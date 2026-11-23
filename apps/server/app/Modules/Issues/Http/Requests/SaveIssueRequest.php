@@ -48,13 +48,16 @@ class SaveIssueRequest extends FormRequest
             'action_plan' => ['nullable', 'string', 'max:2000'],
             'actions_taken' => ['nullable', 'string', 'max:2000'],
             'results' => ['nullable', 'string', 'max:2000'],
-            'priority' => ['nullable', Rule::enum(IssuePriority::class)],
+            // Only the Admin sets issue priority; non-admins default to medium on create and preserve existing on update.
+            'priority' => [Rule::excludeIf(! Gate::allows('administer')), 'nullable', Rule::enum(IssuePriority::class)],
             'reported_on' => ['nullable', 'date_format:Y-m-d', 'before_or_equal:today'],
             'responsible_person' => ['nullable', 'string', 'max:120'],
             'department' => ['nullable', 'string', 'max:120'],
             'target_date' => ['nullable', 'date_format:Y-m-d'],
-            'status' => ['required', Rule::enum(IssueStatus::class)],
-            'requires_ceo_decision' => ['boolean'],
+            // Only the Admin sets issue status; non-admins default to pending on create and preserve existing on update.
+            'status' => [Rule::excludeIf(! Gate::allows('administer')), 'required', Rule::enum(IssueStatus::class)],
+            // Only the Admin may flag or unflag an issue as requiring a CEO decision.
+            'requires_ceo_decision' => [Rule::excludeIf(! Gate::allows('administer')), 'boolean'],
             'remarks' => ['nullable', 'string', 'max:2000'],
             'terminal_id' => ['nullable', 'integer', 'exists:terminals,id'],
             // Only the Admin chooses a supervisor; anyone else's value is dropped before validation.
@@ -71,6 +74,7 @@ class SaveIssueRequest extends FormRequest
     public function toInput(): IssueInput
     {
         $data = $this->validated();
+        $issue = $this->route('issue');
         $text = fn (string $key): ?string => isset($data[$key]) && trim((string) $data[$key]) !== '' ? trim((string) $data[$key]) : null;
 
         return new IssueInput(
@@ -79,13 +83,19 @@ class SaveIssueRequest extends FormRequest
             responsiblePerson: $text('responsible_person'),
             department: $text('department'),
             targetDate: $text('target_date') === null ? null : CarbonImmutable::createFromFormat('!Y-m-d', (string) $data['target_date']),
-            status: IssueStatus::from((string) $data['status']),
-            requiresCeoDecision: (bool) ($data['requires_ceo_decision'] ?? false),
+            status: Gate::allows('administer')
+                ? IssueStatus::from((string) $data['status'])
+                : ($issue instanceof OperationalIssue ? $issue->status : IssueStatus::Pending),
+            requiresCeoDecision: Gate::allows('administer')
+                ? (bool) ($data['requires_ceo_decision'] ?? false)
+                : ($issue instanceof OperationalIssue ? $issue->requires_ceo_decision : false),
             remarks: $text('remarks'),
             terminalId: isset($data['terminal_id']) ? (int) $data['terminal_id'] : null,
             // Only the Admin picks a supervisor; for everyone else it follows the terminal.
             supervisorId: isset($data['supervisor_id']) && Gate::allows('administer') ? (int) $data['supervisor_id'] : null,
-            priority: IssuePriority::tryFrom((string) ($data['priority'] ?? '')) ?? IssuePriority::Medium,
+            priority: Gate::allows('administer')
+                ? (IssuePriority::tryFrom((string) ($data['priority'] ?? '')) ?? IssuePriority::Medium)
+                : ($issue instanceof OperationalIssue ? $issue->priority : IssuePriority::Medium),
             reportedOn: $text('reported_on') === null ? null : CarbonImmutable::createFromFormat('!Y-m-d', (string) $data['reported_on']),
             actionsTaken: $text('actions_taken'),
             results: $text('results'),

@@ -27,7 +27,12 @@ export default function ReportShow({
 }: {
     report: WeeklyReportDetails;
     issues: OperationalIssue[];
-    can: { update: boolean; review: boolean; reopen: boolean };
+    can: {
+        update: boolean;
+        review: boolean;
+        reopen: boolean;
+        requestReopen: boolean;
+    };
     categories: SalesCategory[];
 }) {
     useLocale();
@@ -71,16 +76,27 @@ export default function ReportShow({
                     </div>
                 )}
 
-                {can.update && (
-                    <div className="flex justify-end">
-                        <Button variant="edit" asChild>
-                            <Link href={`/reports/${report.id}/edit`}>
-                                <Pencil aria-hidden="true" />
-                                {report.status === 'returned'
-                                    ? t('Fix and resubmit')
-                                    : t('Edit report')}
-                            </Link>
-                        </Button>
+                {(can.update || can.reopen || can.requestReopen) && (
+                    <div className="flex flex-wrap justify-end gap-2">
+                        {can.update && (
+                            <Button variant="edit" asChild>
+                                <Link href={`/reports/${report.id}/edit`}>
+                                    <Pencil aria-hidden="true" />
+                                    {report.status === 'returned'
+                                        ? t('Fix and resubmit')
+                                        : t('Edit report')}
+                                </Link>
+                            </Button>
+                        )}
+                        {can.reopen && (
+                            <ReviewPanel reportId={report.id} mode="reopen" />
+                        )}
+                        {can.requestReopen && (
+                            <ReviewPanel
+                                reportId={report.id}
+                                mode="request-reopen"
+                            />
+                        )}
                     </div>
                 )}
 
@@ -88,9 +104,36 @@ export default function ReportShow({
                     <ReviewPanel reportId={report.id} mode="review" />
                 )}
 
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                    <div className="rounded-xl border border-t-[3px] border-t-primary bg-card p-4 sm:p-5">
+                        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                            {t('Total sales')}
+                        </p>
+                        <p className="mt-1.5 text-2xl font-bold tabular-nums">
+                            {formatPeso(report.total_sales)}
+                        </p>
+                    </div>
+                    <div className="rounded-xl border border-t-[3px] border-t-primary bg-card p-4 sm:p-5">
+                        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                            {t('Total ridership')}
+                        </p>
+                        <p className="mt-1.5 text-2xl font-bold tabular-nums">
+                            {formatCount(report.total_ridership)}
+                        </p>
+                    </div>
+                    <div className="rounded-xl border border-t-[3px] border-t-primary bg-card p-4 sm:p-5">
+                        <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
+                            {t('Status')}
+                        </p>
+                        <div className="mt-2">
+                            <ReportStatusBadge status={report.status} />
+                        </div>
+                    </div>
+                </div>
+
                 <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
                     <section
-                        className="rounded-lg border bg-card p-5 sm:p-6"
+                        className="rounded-xl border border-t-[3px] border-t-primary bg-card p-5 sm:p-6"
                         aria-labelledby="sales-heading"
                     >
                         <h2
@@ -123,7 +166,7 @@ export default function ReportShow({
                     </section>
 
                     <section
-                        className="rounded-lg border bg-card p-5 sm:p-6"
+                        className="rounded-xl border border-t-[3px] border-t-primary bg-card p-5 sm:p-6"
                         aria-labelledby="ridership-heading"
                     >
                         <h2
@@ -210,7 +253,7 @@ export default function ReportShow({
                 />
 
                 {report.remarks && (
-                    <section className="rounded-lg border bg-card p-5 sm:p-6">
+                    <section className="rounded-xl border border-t-[3px] border-t-primary bg-card p-5 sm:p-6">
                         <h2 className="text-base font-semibold">
                             {t('Remarks')}
                         </h2>
@@ -220,12 +263,8 @@ export default function ReportShow({
                     </section>
                 )}
 
-                {can.reopen && (
-                    <ReviewPanel reportId={report.id} mode="reopen" />
-                )}
-
                 <section
-                    className="rounded-lg border bg-card p-5 sm:p-6"
+                    className="rounded-xl border border-t-[3px] border-t-primary bg-card p-5 sm:p-6"
                     aria-labelledby="history-heading"
                 >
                     <h2
@@ -234,20 +273,24 @@ export default function ReportShow({
                     >
                         {t('History')}
                     </h2>
-                    <ol className="mt-3 space-y-3">
+                    <ol className="relative mt-4 space-y-4 border-l border-border pl-5">
                         {report.history.map((entry) => (
-                            <li key={entry.id} className="text-sm">
+                            <li key={entry.id} className="relative text-sm">
+                                <span
+                                    aria-hidden="true"
+                                    className="absolute top-1.5 -left-[25px] size-2.5 rounded-full border-2 border-primary bg-background"
+                                />
                                 <p>
-                                    <span className="font-medium">
+                                    <span className="font-medium capitalize">
                                         {entry.to_status}
                                     </span>{' '}
                                     <span className="text-muted-foreground">
-                                        {t('by')}
-                                        {entry.by} · {formatDateTime(entry.at)}
+                                        {t('by')} {entry.by} ·{' '}
+                                        {formatDateTime(entry.at)}
                                     </span>
                                 </p>
                                 {entry.comment && (
-                                    <p className="mt-0.5 whitespace-pre-line text-muted-foreground">
+                                    <p className="mt-1 rounded-md border bg-muted/40 px-3 py-2 text-sm whitespace-pre-line text-muted-foreground">
                                         “{entry.comment}”
                                     </p>
                                 )}

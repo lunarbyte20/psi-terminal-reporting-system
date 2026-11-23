@@ -1,27 +1,151 @@
 import { t, useLocale } from '@/lib/i18n';
 import { Form } from '@inertiajs/react';
+import { RotateCcw } from 'lucide-react';
 import { useState } from 'react';
 import { fieldAria, FormField } from '@/components/form-field';
 import { Button } from '@/components/ui/button';
+import {
+    Dialog,
+    DialogClose,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 import { Textarea } from '@/components/ui/textarea';
 
 /**
  * The Admin's decision on a submitted report (approve or return with a
- * reason), or reopening an approved report for a controlled correction.
+ * reason), or a modal trigger to reopen an approved report / request correction.
  */
 export function ReviewPanel({
     reportId,
     mode,
 }: {
     reportId: number;
-    mode: 'review' | 'reopen';
+    mode: 'review' | 'reopen' | 'request-reopen';
 }) {
     useLocale();
-    const [returning, setReturning] = useState(mode === 'reopen');
+    const [returning, setReturning] = useState(false);
+    const [reopenOpen, setReopenOpen] = useState(false);
+
+    if (mode === 'reopen' || mode === 'request-reopen') {
+        const isSupervisorRequest = mode === 'request-reopen';
+
+        return (
+            <Dialog open={reopenOpen} onOpenChange={setReopenOpen}>
+                <DialogTrigger asChild>
+                    <Button
+                        type="button"
+                        variant={isSupervisorRequest ? 'outline' : 'remove'}
+                    >
+                        <RotateCcw aria-hidden="true" />
+                        {isSupervisorRequest
+                            ? t('Request correction')
+                            : t('Reopen for correction')}
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-lg">
+                    <DialogHeader>
+                        <DialogTitle>
+                            {isSupervisorRequest
+                                ? t('Request correction')
+                                : t('Correct an approved report')}
+                        </DialogTitle>
+                        <DialogDescription>
+                            {isSupervisorRequest
+                                ? t(
+                                      'Ask the Admin to reopen this approved report so you can fix a mistake.',
+                                  )
+                                : t(
+                                      'Reopening sends the report back to the supervisor and removes it from totals until it is approved again.',
+                                  )}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <Form
+                        action={
+                            isSupervisorRequest
+                                ? `/reports/${reportId}/request-reopen`
+                                : `/reports/${reportId}/review`
+                        }
+                        method="post"
+                        onSuccess={() => setReopenOpen(false)}
+                        className="space-y-4"
+                    >
+                        {({ errors, processing }) => (
+                            <>
+                                {!isSupervisorRequest && (
+                                    <input
+                                        type="hidden"
+                                        name="decision"
+                                        value="reopen"
+                                    />
+                                )}
+                                <FormField
+                                    id="reopen-reason"
+                                    label={t('What needs to be corrected?')}
+                                    required
+                                    hint={
+                                        isSupervisorRequest
+                                            ? undefined
+                                            : t(
+                                                  'The supervisor sees this note on the report.',
+                                              )
+                                    }
+                                    error={errors.reason ?? errors.review}
+                                >
+                                    <Textarea
+                                        {...fieldAria('reopen-reason', {
+                                            required: true,
+                                            hint: !isSupervisorRequest,
+                                            error:
+                                                errors.reason ?? errors.review,
+                                        })}
+                                        name="reason"
+                                        rows={3}
+                                        maxLength={1000}
+                                        autoFocus
+                                    />
+                                </FormField>
+                                <DialogFooter>
+                                    <DialogClose asChild>
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            disabled={processing}
+                                        >
+                                            {t('Cancel')}
+                                        </Button>
+                                    </DialogClose>
+                                    <Button
+                                        type="submit"
+                                        variant={
+                                            isSupervisorRequest
+                                                ? 'default'
+                                                : 'destructive'
+                                        }
+                                        disabled={processing}
+                                    >
+                                        {processing
+                                            ? t('Sending…')
+                                            : isSupervisorRequest
+                                              ? t('Send request')
+                                              : t('Reopen for correction')}
+                                    </Button>
+                                </DialogFooter>
+                            </>
+                        )}
+                    </Form>
+                </DialogContent>
+            </Dialog>
+        );
+    }
 
     return (
         <section
-            className="space-y-4 rounded-lg border border-status-warning-border bg-card p-5 sm:p-6"
+            className="space-y-4 rounded-xl border border-t-[3px] border-status-warning-border border-t-status-warning-border bg-card p-5 sm:p-6"
             aria-labelledby="review-heading"
         >
             <div className="space-y-1">
@@ -42,7 +166,13 @@ export function ReviewPanel({
             </div>
 
             {mode === 'review' && !returning && (
-                <Form action={`/reports/${reportId}/review`} method="post">
+                <Form
+                    action={`/reports/${reportId}/review`}
+                    method="post"
+                    onSuccess={() =>
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }
+                >
                     {({ errors, processing }) => (
                         <div className="flex flex-wrap items-center justify-end gap-2">
                             {errors.review && (
@@ -79,6 +209,9 @@ export function ReviewPanel({
                 <Form
                     action={`/reports/${reportId}/review`}
                     method="post"
+                    onSuccess={() =>
+                        window.scrollTo({ top: 0, behavior: 'smooth' })
+                    }
                     className="space-y-4"
                 >
                     {({ errors, processing }) => (
@@ -86,7 +219,7 @@ export function ReviewPanel({
                             <input
                                 type="hidden"
                                 name="decision"
-                                value={mode === 'reopen' ? 'reopen' : 'return'}
+                                value="return"
                             />
                             <FormField
                                 id="reason"
@@ -110,16 +243,14 @@ export function ReviewPanel({
                                 />
                             </FormField>
                             <div className="flex flex-wrap justify-end gap-2">
-                                {mode === 'review' && (
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        onClick={() => setReturning(false)}
-                                        disabled={processing}
-                                    >
-                                        {t('Cancel')}
-                                    </Button>
-                                )}
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setReturning(false)}
+                                    disabled={processing}
+                                >
+                                    {t('Cancel')}
+                                </Button>
                                 <Button
                                     type="submit"
                                     variant="destructive"
@@ -127,9 +258,7 @@ export function ReviewPanel({
                                 >
                                     {processing
                                         ? t('Sending…')
-                                        : mode === 'reopen'
-                                          ? t('Reopen for correction')
-                                          : t('Return to supervisor')}
+                                        : t('Return to supervisor')}
                                 </Button>
                             </div>
                         </>

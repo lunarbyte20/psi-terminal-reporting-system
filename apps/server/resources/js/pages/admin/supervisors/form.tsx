@@ -40,7 +40,7 @@ export default function SupervisorFormPage({
     return (
         <>
             <Head title={t(title)} />
-            <main className="grid w-full grid-cols-1 gap-6 p-4 pb-32 sm:p-6 sm:pb-32">
+            <main className="grid w-full grid-cols-1 gap-6 p-4 pb-32 sm:p-6 sm:pb-32 lg:px-[3.5%] lg:py-8 lg:pb-32">
                 <Heading
                     title={t(title)}
                     description={t(
@@ -60,8 +60,7 @@ export default function SupervisorFormPage({
                             : '/admin/supervisors'
                     }
                     method={supervisor ? 'put' : 'post'}
-                    // A wrapper div (not the form) holds the sections: a stretched grid item would make each h-full section as tall as the whole form.
-                    className="max-w-3xl"
+                    className="w-full"
                     disableWhileProcessing
                 >
                     {({ errors, processing }) => (
@@ -73,70 +72,82 @@ export default function SupervisorFormPage({
                                     value={returnTo}
                                 />
                             )}
-                            <div className="space-y-5">
+                            <div className="space-y-4">
                                 <RequiredLegend />
-                                <FormSection title={t('Supervisor details')}>
-                                    <FormField
-                                        id="name"
-                                        label={t('Full name')}
-                                        required
-                                        error={errors.name}
-                                    >
-                                        <Input
-                                            {...fieldAria('name', {
-                                                required: true,
-                                                error: errors.name,
-                                            })}
-                                            name="name"
-                                            defaultValue={supervisor?.name}
-                                            maxLength={120}
-                                            autoComplete="off"
-                                            autoFocus={!supervisor}
+                                <div className="grid grid-cols-1 items-start gap-5 lg:grid-cols-12">
+                                    <div className="space-y-5 lg:col-span-5">
+                                        <FormSection
+                                            title={t('Supervisor details')}
+                                        >
+                                            <FormField
+                                                id="name"
+                                                label={t('Full name')}
+                                                required
+                                                error={errors.name}
+                                            >
+                                                <Input
+                                                    {...fieldAria('name', {
+                                                        required: true,
+                                                        error: errors.name,
+                                                    })}
+                                                    name="name"
+                                                    defaultValue={
+                                                        supervisor?.name
+                                                    }
+                                                    maxLength={120}
+                                                    autoComplete="off"
+                                                    autoFocus={!supervisor}
+                                                />
+                                            </FormField>
+                                            <FormField
+                                                id="phone"
+                                                label={t('Mobile number')}
+                                                error={errors.phone}
+                                            >
+                                                <Input
+                                                    {...fieldAria('phone', {
+                                                        error: errors.phone,
+                                                    })}
+                                                    name="phone"
+                                                    type="tel"
+                                                    defaultValue={
+                                                        supervisor?.phone ?? ''
+                                                    }
+                                                    maxLength={40}
+                                                />
+                                            </FormField>
+                                        </FormSection>
+                                        <AccountSection
+                                            account={account}
+                                            errors={errors}
                                         />
-                                    </FormField>
-                                    <FormField
-                                        id="phone"
-                                        label={t('Mobile number')}
-                                        error={errors.phone}
-                                    >
-                                        <Input
-                                            {...fieldAria('phone', {
-                                                error: errors.phone,
-                                            })}
-                                            name="phone"
-                                            type="tel"
-                                            defaultValue={
-                                                supervisor?.phone ?? ''
-                                            }
-                                            maxLength={40}
-                                        />
-                                    </FormField>
-                                </FormSection>
-                                <FormSection
-                                    title={t('Terminals handled')}
-                                    description={t(
-                                        'Tick every terminal this supervisor reports for. Ticking a terminal that has another supervisor moves it here; unticking one leaves it unassigned. Past reports keep the supervisor they were filed under.',
-                                    )}
-                                >
-                                    <TerminalPicker
-                                        terminals={terminals}
-                                        initialIds={assignedTerminalIds}
-                                        supervisorId={supervisor?.id ?? null}
-                                        error={
-                                            errors.terminal_ids ??
-                                            Object.entries(errors).find(
-                                                ([key]) =>
-                                                    key.startsWith(
-                                                        'terminal_ids.',
-                                                    ),
-                                            )?.[1]
-                                        }
-                                    />
-                                </FormSection>
-                                <AccountSection
-                                    account={account}
-                                    errors={errors}
-                                />
+                                    </div>
+                                    <div className="lg:col-span-7">
+                                        <FormSection
+                                            title={t('Terminals handled')}
+                                            description={t(
+                                                'Tick every terminal this supervisor reports for. Ticking a terminal that has another supervisor moves it here; unticking one leaves it unassigned. Past reports keep the supervisor they were filed under.',
+                                            )}
+                                        >
+                                            <TerminalPicker
+                                                terminals={terminals}
+                                                initialIds={assignedTerminalIds}
+                                                supervisorId={
+                                                    supervisor?.id ?? null
+                                                }
+                                                error={
+                                                    errors.terminal_ids ??
+                                                    Object.entries(errors).find(
+                                                        ([key]) =>
+                                                            key.startsWith(
+                                                                'terminal_ids.',
+                                                            ),
+                                                    )?.[1]
+                                                }
+                                            />
+                                        </FormSection>
+                                    </div>
+                                </div>
                             </div>
                             <FormActions
                                 fixed

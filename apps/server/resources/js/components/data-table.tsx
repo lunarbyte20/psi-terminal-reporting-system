@@ -69,7 +69,7 @@ export function DataTable<T>({
             ) : (
                 <>
                     {/* Phones: each row becomes a card (first column as the title, the rest as labelled lines, actions at the bottom) instead of a table that scrolls sideways. */}
-                    <ul className="space-y-3 md:hidden print:hidden">
+                    <ul className="space-y-2.5 md:hidden print:hidden">
                         {table.getRowModel().rows.map((row) => {
                             const [first, ...rest] = row.getVisibleCells();
                             const actions = rest.find(
@@ -82,21 +82,21 @@ export function DataTable<T>({
                             return (
                                 <li
                                     key={row.id}
-                                    className="rounded-xl border bg-card p-4"
+                                    className="rounded-xl border bg-card p-3.5"
                                 >
-                                    <div className="text-base">
+                                    <div className="text-sm font-semibold">
                                         {flexRender(
                                             first.column.columnDef.cell,
                                             first.getContext(),
                                         )}
                                     </div>
-                                    <dl className="mt-2 space-y-1.5 text-sm">
+                                    <dl className="mt-2 space-y-1 text-xs">
                                         {details.map((cell) => (
                                             <div
                                                 key={cell.id}
                                                 className="flex items-start justify-between gap-3"
                                             >
-                                                <dt className="shrink-0 text-xs text-muted-foreground">
+                                                <dt className="shrink-0 text-muted-foreground">
                                                     {typeof cell.column
                                                         .columnDef.header ===
                                                     'string'
@@ -115,7 +115,7 @@ export function DataTable<T>({
                                         ))}
                                     </dl>
                                     {actions && (
-                                        <div className="mt-3 flex flex-wrap justify-end gap-2 border-t pt-3">
+                                        <div className="mt-2.5 flex flex-wrap justify-end gap-2 border-t pt-2.5">
                                             {flexRender(
                                                 actions.column.columnDef.cell,
                                                 actions.getContext(),

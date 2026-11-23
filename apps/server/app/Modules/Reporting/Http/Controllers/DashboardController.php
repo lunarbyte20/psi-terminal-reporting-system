@@ -3,6 +3,7 @@
 namespace App\Modules\Reporting\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\Evaluations\Models\ManagementEvaluation;
 use App\Modules\Issues\Actions\GetIssueSnapshot;
 use App\Modules\Reporting\Actions\GetExecutiveDashboard;
 use App\Modules\Reporting\Http\Requests\ShowDashboardRequest;
@@ -41,6 +42,10 @@ class DashboardController extends Controller
             $payload = $dashboard->execute($request->user(), $week);
         }
 
+        $hasEvaluation = $period !== 'week' || $week === null
+            ? true
+            : ManagementEvaluation::query()->where('reporting_week_id', $week->id)->exists();
+
         return Inertia::render('dashboard/index', [
             'period' => $period,
             'weeks' => $weeks->map(fn (ReportingWeek $item) => $item->summary())->values(),
@@ -50,6 +55,7 @@ class DashboardController extends Controller
             'dashboard' => $payload,
             // Open issues carry forward, so the snapshot does not depend on the chosen week.
             'issues' => $issues->execute($request->user()),
+            'hasEvaluation' => $hasEvaluation,
         ]);
     }
 }

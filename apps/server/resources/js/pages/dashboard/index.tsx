@@ -39,9 +39,11 @@ function Metric({
 }) {
     useLocale();
     return (
-        <article className="min-w-0 rounded-xl border bg-card p-4 sm:p-5 print:break-inside-avoid">
-            <p className="text-xs text-muted-foreground">{t(label)}</p>
-            <p className="mt-2.5 mb-1 truncate text-xl font-bold text-primary tabular-nums sm:text-[23px]">
+        <article className="min-w-0 rounded-xl border border-t-[3px] border-t-primary bg-card p-4 sm:p-5 print:break-inside-avoid">
+            <p className="text-[11px] font-semibold tracking-wider text-muted-foreground uppercase">
+                {t(label)}
+            </p>
+            <p className="mt-2 mb-1 truncate text-xl font-bold text-primary tabular-nums sm:text-[23px]">
                 {value}
             </p>
             <p className="text-xs text-muted-foreground">{t(detail)}</p>
@@ -57,6 +59,7 @@ export default function Dashboard({
     month,
     dashboard,
     issues,
+    hasEvaluation = true,
 }: {
     period: 'week' | 'month';
     weeks: ReportingWeek[];
@@ -65,9 +68,13 @@ export default function Dashboard({
     month: { value: string; label: string } | null;
     dashboard: ExecutiveDashboard | null;
     issues: IssueSnapshotData;
+    hasEvaluation?: boolean;
 }) {
     useLocale();
     const { auth } = usePage().props;
+    const canViewAll = auth.can.viewAllTerminals;
+    const canAdminister = auth.can.administer;
+    const isSupervisor = !canViewAll;
     const sales = dashboard?.totals.sales;
     const hasSelection =
         (period === 'week' && week !== null) ||
@@ -75,11 +82,19 @@ export default function Dashboard({
 
     return (
         <>
-            <Head title={t('Executive Dashboard')} />
+            <Head
+                title={canViewAll ? t('Executive Dashboard') : t('Dashboard')}
+            />
             <main className="grid w-full grid-cols-1 gap-4 p-4 sm:p-6 lg:px-[3.5%] lg:py-8">
                 <PageHeader
-                    title={t('Executive Dashboard')}
-                    description={t('Weekly performance at a glance.')}
+                    title={
+                        canViewAll ? t('Executive Dashboard') : t('Dashboard')
+                    }
+                    description={
+                        canViewAll
+                            ? t('Weekly performance at a glance.')
+                            : t('Your assigned terminals for this week.')
+                    }
                     actions={
                         <>
                             <span className="hidden rounded-full bg-[#eeeeff] px-3 py-2 text-[10px] font-bold tracking-wider text-primary uppercase sm:inline-block dark:bg-primary/20">
@@ -277,6 +292,99 @@ export default function Dashboard({
                             </p>
                         </div>
 
+                        {canAdminister &&
+                            ((period === 'week' &&
+                                week &&
+                                dashboard.progress.waiting > 0) ||
+                                issues.pending > 0) && (
+                                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50/70 px-4 py-3 text-sm dark:border-amber-900 dark:bg-amber-950/30">
+                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 font-medium text-amber-950 dark:text-amber-100">
+                                        {period === 'week' &&
+                                            week &&
+                                            dashboard.progress.waiting > 0 && (
+                                                <span>
+                                                    {dashboard.progress.waiting}{' '}
+                                                    {t('Waiting for review')}
+                                                </span>
+                                            )}
+                                        {issues.pending > 0 && (
+                                            <span>
+                                                {issues.pending} {t('Pending')}{' '}
+                                                {t('Issues & Actions')}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                        {period === 'week' &&
+                                            week &&
+                                            dashboard.progress.waiting > 0 && (
+                                                <Button
+                                                    asChild
+                                                    size="sm"
+                                                    variant="outline"
+                                                >
+                                                    <Link
+                                                        href={`/reports?week=${week.id}&status=submitted`}
+                                                    >
+                                                        {t('Weekly Reports')}
+                                                    </Link>
+                                                </Button>
+                                            )}
+                                        {issues.pending > 0 && (
+                                            <Button
+                                                asChild
+                                                size="sm"
+                                                variant="outline"
+                                            >
+                                                <Link href="/issues?status=pending">
+                                                    {t('Issues & Actions')}
+                                                </Link>
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            )}
+
+                        {canViewAll &&
+                            period === 'week' &&
+                            week &&
+                            !hasEvaluation && (
+                                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/25 bg-primary/[0.04] px-4 py-3 text-sm">
+                                    <p className="font-medium text-foreground">
+                                        {t(
+                                            'No Management Evaluation written for this week yet.',
+                                        )}
+                                    </p>
+                                    <Button asChild size="sm" variant="outline">
+                                        <Link
+                                            href={`/evaluation?week=${week.id}`}
+                                        >
+                                            {t('Evaluation')}
+                                        </Link>
+                                    </Button>
+                                </div>
+                            )}
+
+                        {isSupervisor &&
+                            period === 'week' &&
+                            week &&
+                            (dashboard.progress.in_progress > 0 ||
+                                dashboard.progress.not_started > 0) && (
+                                <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-primary/20 bg-[#eeeeff]/60 px-4 py-3 text-sm dark:bg-primary/15">
+                                    <p className="font-medium text-foreground">
+                                        {dashboard.progress.in_progress}{' '}
+                                        {t('In progress')} ·{' '}
+                                        {dashboard.progress.not_started}{' '}
+                                        {t('Not started')}
+                                    </p>
+                                    <Button asChild size="sm">
+                                        <Link href={`/reports?week=${week.id}`}>
+                                            {t('My Weekly Reports')}
+                                        </Link>
+                                    </Button>
+                                </div>
+                            )}
+
                         <div className="grid grid-cols-2 gap-3.5 lg:grid-cols-4">
                             <Metric
                                 label={t('Total Sales')}
@@ -315,108 +423,161 @@ export default function Dashboard({
                             <Metric
                                 label={t('Open Issues')}
                                 value={formatCount(issues.open)}
-                                detail={`${issues.overdue} overdue · ${issues.ceo_decision} need CEO decision`}
+                                detail={
+                                    canViewAll
+                                        ? `${issues.overdue} overdue · ${issues.ceo_decision} need CEO decision`
+                                        : `${issues.overdue} ${t('overdue')}`
+                                }
                             />
                         </div>
 
-                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                            <Panel
-                                title={t('Supervisor Performance')}
-                                description={t('Current week sales ranking')}
-                            >
-                                <SupervisorRanking
-                                    rows={dashboard.supervisor_ranking}
-                                />
-                            </Panel>
-                            <Panel
-                                title={t('Ridership by Vehicle Type')}
-                                description={t('Passenger distribution')}
-                            >
-                                <RidershipChart
-                                    rows={dashboard.ridership_by_vehicle_type}
-                                />
-                            </Panel>
-                        </div>
+                        {canViewAll ? (
+                            <>
+                                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                                    <Panel
+                                        title={t('Supervisor Performance')}
+                                        description={t(
+                                            'Current week sales ranking',
+                                        )}
+                                    >
+                                        <SupervisorRanking
+                                            rows={dashboard.supervisor_ranking}
+                                        />
+                                    </Panel>
+                                    <Panel
+                                        title={t('Ridership by Vehicle Type')}
+                                        description={t(
+                                            'Passenger distribution',
+                                        )}
+                                    >
+                                        <RidershipChart
+                                            rows={
+                                                dashboard.ridership_by_vehicle_type
+                                            }
+                                        />
+                                    </Panel>
+                                </div>
 
-                        <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                            <Panel
-                                title={t('Sales Distribution')}
-                                description={t(
-                                    'Share of approved sales by supervisor',
-                                )}
-                            >
-                                <SalesDistributionChart
-                                    rows={dashboard.supervisor_ranking}
-                                />
-                            </Panel>
-                            <Panel
-                                title={t('Weekly Sales Trend')}
-                                description={t(
-                                    'Approved sales over the last eight reporting weeks',
-                                )}
-                            >
-                                <WeeklySalesTrendChart
-                                    weeks={dashboard.trend}
-                                    selectedWeekId={
-                                        period === 'week' && week
-                                            ? week.id
-                                            : (dashboard.trend[
-                                                  dashboard.trend.length - 1
-                                              ]?.week_id ?? 0)
-                                    }
-                                />
-                            </Panel>
-                        </div>
+                                <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                                    <Panel
+                                        title={t('Sales Distribution')}
+                                        description={t(
+                                            'Share of approved sales by supervisor',
+                                        )}
+                                    >
+                                        <SalesDistributionChart
+                                            rows={dashboard.supervisor_ranking}
+                                        />
+                                    </Panel>
+                                    <Panel
+                                        title={t('Weekly Sales Trend')}
+                                        description={t(
+                                            'Approved sales over the last eight reporting weeks',
+                                        )}
+                                    >
+                                        <WeeklySalesTrendChart
+                                            weeks={dashboard.trend}
+                                            selectedWeekId={
+                                                period === 'week' && week
+                                                    ? week.id
+                                                    : (dashboard.trend[
+                                                          dashboard.trend
+                                                              .length - 1
+                                                      ]?.week_id ?? 0)
+                                            }
+                                        />
+                                    </Panel>
+                                </div>
 
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <Panel
-                                title={t('Top 3 Highest Sales')}
-                                description={t('Terminal performance')}
-                            >
-                                <RankList
-                                    rows={dashboard.top_sales}
-                                    show="sales"
-                                    empty={t('No approved reports yet.')}
-                                />
-                            </Panel>
-                            <Panel
-                                title={t('Top 3 Lowest Sales')}
-                                description={t('Terminal performance')}
-                            >
-                                <RankList
-                                    rows={dashboard.lowest_sales}
-                                    show="sales"
-                                    empty={t('No approved reports yet.')}
-                                />
-                            </Panel>
-                        </div>
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <Panel
+                                        title={t('Top 3 Highest Sales')}
+                                        description={t('Terminal performance')}
+                                    >
+                                        <RankList
+                                            rows={dashboard.top_sales}
+                                            show="sales"
+                                            empty={t(
+                                                'No approved reports yet.',
+                                            )}
+                                        />
+                                    </Panel>
+                                    <Panel
+                                        title={t('Top 3 Lowest Sales')}
+                                        description={t('Terminal performance')}
+                                    >
+                                        <RankList
+                                            rows={dashboard.lowest_sales}
+                                            show="sales"
+                                            empty={t(
+                                                'No approved reports yet.',
+                                            )}
+                                        />
+                                    </Panel>
+                                </div>
 
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                            <Panel
-                                title={t('Top 3 Percentage Increases')}
-                                description={t('Compared with previous week')}
-                            >
-                                <RankList
-                                    rows={dashboard.biggest_increases}
-                                    show="change"
-                                    empty={t(
-                                        'No terminal grew compared with an approved previous week.',
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <Panel
+                                        title={t('Top 3 Percentage Increases')}
+                                        description={t(
+                                            'Compared with previous week',
+                                        )}
+                                    >
+                                        <RankList
+                                            rows={dashboard.biggest_increases}
+                                            show="change"
+                                            empty={t(
+                                                'No terminal grew compared with an approved previous week.',
+                                            )}
+                                        />
+                                    </Panel>
+                                    <Panel
+                                        title={t('Top 3 Percentage Decreases')}
+                                        description={t(
+                                            'Compared with previous week',
+                                        )}
+                                    >
+                                        <RankList
+                                            rows={dashboard.biggest_decreases}
+                                            show="change"
+                                            empty={t(
+                                                'No terminal dropped compared with an approved previous week.',
+                                            )}
+                                        />
+                                    </Panel>
+                                </div>
+                            </>
+                        ) : (
+                            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+                                <Panel
+                                    title={t('Weekly Sales Trend')}
+                                    description={t(
+                                        'Approved sales over the last eight reporting weeks',
                                     )}
-                                />
-                            </Panel>
-                            <Panel
-                                title={t('Top 3 Percentage Decreases')}
-                                description={t('Compared with previous week')}
-                            >
-                                <RankList
-                                    rows={dashboard.biggest_decreases}
-                                    show="change"
-                                    empty={t(
-                                        'No terminal dropped compared with an approved previous week.',
-                                    )}
-                                />
-                            </Panel>
-                        </div>
+                                >
+                                    <WeeklySalesTrendChart
+                                        weeks={dashboard.trend}
+                                        selectedWeekId={
+                                            period === 'week' && week
+                                                ? week.id
+                                                : (dashboard.trend[
+                                                      dashboard.trend.length - 1
+                                                  ]?.week_id ?? 0)
+                                        }
+                                    />
+                                </Panel>
+                                <Panel
+                                    title={t('Ridership by Vehicle Type')}
+                                    description={t('Passenger distribution')}
+                                >
+                                    <RidershipChart
+                                        rows={
+                                            dashboard.ridership_by_vehicle_type
+                                        }
+                                    />
+                                </Panel>
+                            </div>
+                        )}
 
                         <Panel
                             title={t('Terminal Sales Comparison')}

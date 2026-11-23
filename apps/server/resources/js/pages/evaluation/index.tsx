@@ -1,15 +1,10 @@
 import { t, useLocale } from '@/lib/i18n';
 import { Head, router, usePage } from '@inertiajs/react';
-import { ChevronDown } from 'lucide-react';
 import { useState } from 'react';
 import { fieldAria, FormField } from '@/components/form-field';
+import { FixedActionBar } from '@/components/fixed-action-bar';
 import { PageHeader, Panel } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
-import {
-    Collapsible,
-    CollapsibleContent,
-    CollapsibleTrigger,
-} from '@/components/ui/collapsible';
 import { Label } from '@/components/ui/label';
 import {
     Select,
@@ -20,6 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { formatDateTime } from '@/lib/format';
+import { cn } from '@/lib/utils';
 import type { ReportingWeek } from '@/types';
 import { RecommendationsEditor } from './recommendations-editor';
 
@@ -72,14 +68,11 @@ export default function EvaluationPage({
     const [sections, setSections] = useState<Record<string, string>>(
         () => evaluation?.sections ?? {},
     );
-    const hasSavedSections = Object.values(evaluation?.sections ?? {}).some(
-        (v) => v.trim() !== '',
-    );
     const hasSectionErrors = sectionOptions.some(
         (opt) => errors[`sections.${opt.key}`] !== undefined,
     );
-    const [sectionsOpen, setSectionsOpen] = useState(
-        hasSavedSections || hasSectionErrors,
+    const [tab, setTab] = useState<'summary' | 'sections'>(
+        hasSectionErrors ? 'sections' : 'summary',
     );
     const [saving, setSaving] = useState(false);
 
@@ -104,7 +97,11 @@ export default function EvaluationPage({
     return (
         <>
             <Head title={t('Evaluation & Recommendations')} />
-            <main className="grid w-full grid-cols-1 gap-4 p-4 sm:p-6 lg:px-[3.5%] lg:py-8">
+            <main
+                className={`grid w-full grid-cols-1 gap-4 p-4 sm:p-6 lg:px-[3.5%] lg:py-8 ${
+                    canEdit && week !== null ? 'pb-32 sm:pb-32' : ''
+                }`}
+            >
                 <PageHeader
                     title={t('Evaluation & Recommendations')}
                     description={t(
@@ -188,237 +185,251 @@ export default function EvaluationPage({
                                         )
                             }
                         >
+                            <div
+                                role="tablist"
+                                aria-label={t('Evaluation & Recommendations')}
+                                className="mb-4 flex flex-wrap gap-1.5 border-b pb-3"
+                            >
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={tab === 'summary'}
+                                    onClick={() => setTab('summary')}
+                                    className={cn(
+                                        'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors',
+                                        tab === 'summary'
+                                            ? 'border-primary bg-primary text-primary-foreground'
+                                            : 'bg-card text-muted-foreground hover:bg-[#eeeeff] hover:text-primary dark:hover:bg-primary/20',
+                                    )}
+                                >
+                                    {t('Evaluation')}
+                                </button>
+                                <button
+                                    type="button"
+                                    role="tab"
+                                    aria-selected={tab === 'sections'}
+                                    onClick={() => setTab('sections')}
+                                    className={cn(
+                                        'rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors',
+                                        tab === 'sections'
+                                            ? 'border-primary bg-primary text-primary-foreground'
+                                            : 'bg-card text-muted-foreground hover:bg-[#eeeeff] hover:text-primary dark:hover:bg-primary/20',
+                                    )}
+                                >
+                                    {t('Detailed sections')}
+                                </button>
+                            </div>
                             {canEdit ? (
                                 <form
+                                    id="evaluation-form"
                                     className="space-y-5"
                                     onSubmit={(event) => {
                                         event.preventDefault();
                                         save();
                                     }}
                                 >
-                                    <FormField
-                                        id="key-concerns"
-                                        label={t('Key issues & concerns')}
-                                        error={errors.key_concerns}
+                                    <div
+                                        className={
+                                            tab === 'summary'
+                                                ? 'space-y-5'
+                                                : 'hidden'
+                                        }
                                     >
-                                        <Textarea
-                                            {...fieldAria('key-concerns', {
-                                                error: errors.key_concerns,
-                                            })}
-                                            rows={5}
-                                            maxLength={5000}
-                                            value={keyConcerns}
-                                            onChange={(event) =>
-                                                setKeyConcerns(
-                                                    event.target.value,
-                                                )
-                                            }
+                                        <FormField
+                                            id="key-concerns"
+                                            label={t('Key issues & concerns')}
+                                            error={errors.key_concerns}
+                                        >
+                                            <Textarea
+                                                {...fieldAria('key-concerns', {
+                                                    error: errors.key_concerns,
+                                                })}
+                                                rows={4}
+                                                maxLength={5000}
+                                                value={keyConcerns}
+                                                onChange={(event) =>
+                                                    setKeyConcerns(
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </FormField>
+                                        <FormField
+                                            id="assessment"
+                                            label={t('Evaluation')}
+                                            error={errors.evaluation}
+                                        >
+                                            <Textarea
+                                                {...fieldAria('assessment', {
+                                                    error: errors.evaluation,
+                                                })}
+                                                rows={5}
+                                                maxLength={10000}
+                                                value={assessment}
+                                                onChange={(event) =>
+                                                    setAssessment(
+                                                        event.target.value,
+                                                    )
+                                                }
+                                            />
+                                        </FormField>
+                                        <RecommendationsEditor
+                                            items={recommendations}
+                                            errors={errors}
+                                            onChange={setRecommendations}
                                         />
-                                    </FormField>
-                                    <FormField
-                                        id="assessment"
-                                        label={t('Evaluation')}
-                                        error={errors.evaluation}
+                                    </div>
+                                    <div
+                                        className={
+                                            tab === 'sections'
+                                                ? 'grid grid-cols-1 gap-4 md:grid-cols-2'
+                                                : 'hidden'
+                                        }
                                     >
-                                        <Textarea
-                                            {...fieldAria('assessment', {
-                                                error: errors.evaluation,
-                                            })}
-                                            rows={6}
-                                            maxLength={10000}
-                                            value={assessment}
-                                            onChange={(event) =>
-                                                setAssessment(
-                                                    event.target.value,
-                                                )
-                                            }
-                                        />
-                                    </FormField>
-                                    <RecommendationsEditor
-                                        items={recommendations}
-                                        errors={errors}
-                                        onChange={setRecommendations}
-                                    />
-                                    <Collapsible
-                                        open={sectionsOpen}
-                                        onOpenChange={setSectionsOpen}
-                                        className="rounded-lg border bg-muted/20 p-4"
-                                    >
-                                        <CollapsibleTrigger asChild>
-                                            <button
-                                                type="button"
-                                                className="flex w-full items-center justify-between text-left text-sm font-medium"
+                                        {sectionOptions.map((opt) => (
+                                            <FormField
+                                                key={opt.key}
+                                                id={`section-${opt.key}`}
+                                                label={t(opt.label)}
+                                                error={
+                                                    errors[
+                                                        `sections.${opt.key}`
+                                                    ]
+                                                }
                                             >
-                                                <span>
-                                                    {t(
-                                                        'Detailed sections (optional,',
-                                                    )}{' '}
-                                                    {
-                                                        Object.values(
-                                                            sections,
-                                                        ).filter(
-                                                            (v) =>
-                                                                v.trim() !== '',
-                                                        ).length
-                                                    }{' '}
-                                                    {t('of')}
-                                                    {sectionOptions.length}{' '}
-                                                    {t('filled)')}
-                                                </span>
-                                                <ChevronDown
-                                                    className={`size-4 text-muted-foreground transition-transform ${
-                                                        sectionsOpen
-                                                            ? 'rotate-180'
-                                                            : ''
-                                                    }`}
-                                                />
-                                            </button>
-                                        </CollapsibleTrigger>
-                                        <CollapsibleContent className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-                                            {sectionOptions.map((opt) => (
-                                                <FormField
-                                                    key={opt.key}
-                                                    id={`section-${opt.key}`}
-                                                    label={t(opt.label)}
-                                                    error={
-                                                        errors[
-                                                            `sections.${opt.key}`
-                                                        ]
+                                                <Textarea
+                                                    {...fieldAria(
+                                                        `section-${opt.key}`,
+                                                        {
+                                                            error: errors[
+                                                                `sections.${opt.key}`
+                                                            ],
+                                                        },
+                                                    )}
+                                                    rows={3}
+                                                    maxLength={5000}
+                                                    value={
+                                                        sections[opt.key] ?? ''
                                                     }
-                                                >
-                                                    <Textarea
-                                                        {...fieldAria(
-                                                            `section-${opt.key}`,
-                                                            {
-                                                                error: errors[
-                                                                    `sections.${opt.key}`
-                                                                ],
-                                                            },
-                                                        )}
-                                                        rows={3}
-                                                        maxLength={5000}
-                                                        value={
-                                                            sections[opt.key] ??
-                                                            ''
-                                                        }
-                                                        onChange={(event) =>
-                                                            setSections(
-                                                                (prev) => ({
-                                                                    ...prev,
-                                                                    [opt.key]:
-                                                                        event
-                                                                            .target
-                                                                            .value,
-                                                                }),
-                                                            )
-                                                        }
-                                                    />
-                                                </FormField>
-                                            ))}
-                                        </CollapsibleContent>
-                                    </Collapsible>
-                                    <div className="flex justify-end">
-                                        <Button type="submit" disabled={saving}>
-                                            {saving
-                                                ? t('Saving…')
-                                                : t('Save evaluation')}
-                                        </Button>
+                                                    onChange={(event) =>
+                                                        setSections((prev) => ({
+                                                            ...prev,
+                                                            [opt.key]:
+                                                                event.target
+                                                                    .value,
+                                                        }))
+                                                    }
+                                                />
+                                            </FormField>
+                                        ))}
                                     </div>
                                 </form>
                             ) : (
                                 evaluation && (
                                     <div className="space-y-5 text-sm">
-                                        <section>
-                                            <h3 className="font-semibold">
-                                                {t('Key issues & concerns')}
-                                            </h3>
-                                            <p className="mt-1 whitespace-pre-line text-muted-foreground">
-                                                {evaluation.key_concerns ??
-                                                    t('None recorded.')}
-                                            </p>
-                                        </section>
-                                        <section>
-                                            <h3 className="font-semibold">
-                                                {t('Evaluation')}
-                                            </h3>
-                                            <p className="mt-1 whitespace-pre-line text-muted-foreground">
-                                                {evaluation.evaluation ??
-                                                    t('None recorded.')}
-                                            </p>
-                                        </section>
-                                        <section>
-                                            <h3 className="font-semibold">
-                                                {t(
-                                                    'Management recommendations',
-                                                )}
-                                            </h3>
-                                            {evaluation.recommendations
-                                                .length === 0 ? (
-                                                <p className="mt-1 text-muted-foreground">
-                                                    {t('None recorded.')}
-                                                </p>
-                                            ) : (
-                                                <ol className="mt-1 list-decimal space-y-1 pl-5">
-                                                    {evaluation.recommendations.map(
-                                                        (item, index) => (
-                                                            <li
-                                                                key={index}
-                                                                className="whitespace-pre-line"
-                                                            >
-                                                                {item}
-                                                            </li>
-                                                        ),
+                                        {tab === 'summary' ? (
+                                            <>
+                                                <section className="rounded-lg border border-l-4 border-l-primary/50 bg-muted/15 p-4">
+                                                    <h3 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                                        {t(
+                                                            'Key issues & concerns',
+                                                        )}
+                                                    </h3>
+                                                    <p className="mt-1.5 whitespace-pre-line text-foreground">
+                                                        {evaluation.key_concerns ??
+                                                            t('None recorded.')}
+                                                    </p>
+                                                </section>
+                                                <section className="rounded-lg border border-l-4 border-l-primary/50 bg-muted/15 p-4">
+                                                    <h3 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                                        {t('Evaluation')}
+                                                    </h3>
+                                                    <p className="mt-1.5 whitespace-pre-line text-foreground">
+                                                        {evaluation.evaluation ??
+                                                            t('None recorded.')}
+                                                    </p>
+                                                </section>
+                                                <section>
+                                                    <h3 className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+                                                        {t(
+                                                            'Management recommendations',
+                                                        )}
+                                                    </h3>
+                                                    {evaluation.recommendations
+                                                        .length === 0 ? (
+                                                        <p className="mt-1.5 text-muted-foreground">
+                                                            {t(
+                                                                'None recorded.',
+                                                            )}
+                                                        </p>
+                                                    ) : (
+                                                        <ol className="mt-2 space-y-2">
+                                                            {evaluation.recommendations.map(
+                                                                (
+                                                                    item,
+                                                                    index,
+                                                                ) => (
+                                                                    <li
+                                                                        key={
+                                                                            index
+                                                                        }
+                                                                        className="flex items-start gap-2.5 rounded-lg border bg-card p-3"
+                                                                    >
+                                                                        <span className="mt-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-primary/10 text-[11px] font-bold text-primary tabular-nums">
+                                                                            {index +
+                                                                                1}
+                                                                        </span>
+                                                                        <span className="whitespace-pre-line">
+                                                                            {
+                                                                                item
+                                                                            }
+                                                                        </span>
+                                                                    </li>
+                                                                ),
+                                                            )}
+                                                        </ol>
                                                     )}
-                                                </ol>
-                                            )}
-                                        </section>
-                                        {sectionOptions.some(
-                                            (opt) =>
-                                                (
-                                                    evaluation.sections?.[
-                                                        opt.key
-                                                    ] ?? ''
-                                                ).trim() !== '',
-                                        ) && (
-                                            <section className="space-y-3 border-t pt-4">
-                                                <h3 className="font-semibold">
-                                                    {t('Detailed sections')}
-                                                </h3>
-                                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                                    {sectionOptions.map(
-                                                        (opt) => {
-                                                            const text =
-                                                                evaluation
-                                                                    .sections?.[
-                                                                    opt.key
-                                                                ];
-                                                            if (
-                                                                !text ||
-                                                                text.trim() ===
-                                                                    ''
-                                                            ) {
-                                                                return null;
-                                                            }
-                                                            return (
-                                                                <div
-                                                                    key={
-                                                                        opt.key
-                                                                    }
-                                                                >
-                                                                    <h4 className="text-xs font-semibold tracking-wide text-muted-foreground uppercase">
-                                                                        {t(
-                                                                            opt.label,
-                                                                        )}
-                                                                    </h4>
-                                                                    <p className="mt-1 whitespace-pre-line">
-                                                                        {text}
-                                                                    </p>
-                                                                </div>
-                                                            );
-                                                        },
-                                                    )}
-                                                </div>
-                                            </section>
+                                                </section>
+                                            </>
+                                        ) : sectionOptions.some(
+                                              (opt) =>
+                                                  (
+                                                      evaluation.sections?.[
+                                                          opt.key
+                                                      ] ?? ''
+                                                  ).trim() !== '',
+                                          ) ? (
+                                            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                                {sectionOptions.map((opt) => {
+                                                    const text =
+                                                        evaluation.sections?.[
+                                                            opt.key
+                                                        ];
+                                                    if (
+                                                        !text ||
+                                                        text.trim() === ''
+                                                    ) {
+                                                        return null;
+                                                    }
+                                                    return (
+                                                        <div
+                                                            key={opt.key}
+                                                            className="rounded-lg border bg-muted/15 p-3.5"
+                                                        >
+                                                            <h4 className="text-xs font-semibold tracking-wide text-primary uppercase">
+                                                                {t(opt.label)}
+                                                            </h4>
+                                                            <p className="mt-1.5 whitespace-pre-line">
+                                                                {text}
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        ) : (
+                                            <p className="text-muted-foreground">
+                                                {t('None recorded.')}
+                                            </p>
                                         )}
                                     </div>
                                 )
@@ -427,6 +438,20 @@ export default function EvaluationPage({
                     </>
                 )}
             </main>
+            {canEdit && week !== null && (
+                <FixedActionBar>
+                    <div className="flex items-center justify-end gap-2">
+                        <Button
+                            type="submit"
+                            form="evaluation-form"
+                            className="h-11 w-full sm:h-9 sm:w-auto"
+                            disabled={saving}
+                        >
+                            {saving ? t('Saving…') : t('Save evaluation')}
+                        </Button>
+                    </div>
+                </FixedActionBar>
+            )}
         </>
     );
 }

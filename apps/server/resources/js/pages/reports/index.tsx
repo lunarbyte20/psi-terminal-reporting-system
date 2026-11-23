@@ -1,10 +1,17 @@
 import { t, useLocale } from '@/lib/i18n';
 import { Form, Head, Link, router, usePage } from '@inertiajs/react';
 import type { ColumnDef } from '@tanstack/react-table';
-import { Bell, CheckCheck, Eye } from 'lucide-react';
+import {
+    Bell,
+    CalendarRange,
+    CheckCheck,
+    Eye,
+    Pencil,
+    Plus,
+} from 'lucide-react';
 import { useState } from 'react';
 import { DataTable } from '@/components/data-table';
-import { ListFilters } from '@/components/list-filters';
+import { ANY, ListFilters } from '@/components/list-filters';
 import { PageHeader, Panel } from '@/components/page-header';
 import { RefreshButton } from '@/components/refresh-button';
 import {
@@ -22,14 +29,6 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { formatCount, formatDate, formatDays, formatPeso } from '@/lib/format';
 import { cn } from '@/lib/utils';
 import type { Option, Paginated, ReportingWeek, ReportStatus } from '@/types';
@@ -89,7 +88,10 @@ export default function WeeklyReports({
 }) {
     useLocale();
     const canAdminister = usePage().props.auth.can.administer;
-    const filtered = filters.q !== '' || filters.status !== 'all';
+    const filtered =
+        filters.q !== '' ||
+        filters.status !== 'all' ||
+        filters.supervisor !== null;
     const showTabs = viewAll && supervisors.length > 1;
     const submittedCount = board?.counts.submitted ?? 0;
     const pendingReminderCount =
@@ -99,14 +101,23 @@ export default function WeeklyReports({
     const [confirmBulkApprove, setConfirmBulkApprove] = useState(false);
     const [confirmReminders, setConfirmReminders] = useState(false);
     const [bulkBusy, setBulkBusy] = useState(false);
+    const [showSummaryCards, setShowSummaryCards] = useState(false);
 
     const columns: ColumnDef<BoardRow>[] = [
         {
             accessorKey: 'terminal',
             header: t('Terminal'),
-            cell: ({ row }) => (
-                <span className="font-medium">{row.original.terminal}</span>
-            ),
+            cell: ({ row }) =>
+                row.original.report_id !== null ? (
+                    <Link
+                        href={`/reports/${row.original.report_id}`}
+                        className="font-medium hover:text-primary hover:underline"
+                    >
+                        {row.original.terminal}
+                    </Link>
+                ) : (
+                    <span className="font-medium">{row.original.terminal}</span>
+                ),
         },
         {
             id: 'supervisor',
@@ -155,6 +166,7 @@ export default function WeeklyReports({
                     row={row.original}
                     week={week}
                     canStart={canStart}
+                    canAdminister={canAdminister}
                 />
             ),
         },
@@ -178,6 +190,12 @@ export default function WeeklyReports({
                                 </span>
                             )}
                             <RefreshButton only={['board']} />
+                            <Button variant="outline" size="sm" asChild>
+                                <Link href="/reports/monthly">
+                                    <CalendarRange className="size-4" />
+                                    {t('Monthly summary')}
+                                </Link>
+                            </Button>
                             {canAdminister &&
                                 week &&
                                 pendingReminderCount > 0 && (
@@ -216,14 +234,6 @@ export default function WeeklyReports({
                     }
                 />
 
-                {weeks.length > 0 && week && (
-                    <WeekPicker
-                        weeks={weeks}
-                        week={week}
-                        supervisor={filters.supervisor}
-                    />
-                )}
-
                 {board === null || week === null ? (
                     <div className="rounded-xl border bg-card p-6">
                         <p className="font-medium">
@@ -247,55 +257,61 @@ export default function WeeklyReports({
                         }
                     >
                         <div className="space-y-4">
-                            {showTabs && (
-                                <SupervisorTabs
-                                    supervisors={supervisors}
-                                    selected={filters.supervisor}
-                                    week={week}
-                                />
-                            )}
-
-                            <SupervisorSummary
-                                cards={board.supervisors}
-                                selected={filters.supervisor}
-                            />
-
-                            <p className="text-xs text-muted-foreground">
-                                {(
-                                    [
-                                        'not_started',
-                                        'draft',
-                                        'returned',
-                                        'submitted',
-                                        'approved',
-                                    ] as const
-                                )
-                                    .map(
-                                        (state) =>
-                                            `${board.counts[state] ?? 0} ${reportStatusLabel(state).toLowerCase()}`,
-                                    )
-                                    .join(' · ')}
-                                {' · due '}
-                                {formatDate(week.due_on)} (
-                                {formatDays(week.days)})
-                            </p>
-
                             <ListFilters
                                 action="/reports"
                                 searchLabel={t('Search by terminal')}
                                 search={filters.q}
                                 filtered={filtered}
-                                hidden={{
-                                    week: String(week.id),
-                                    ...(filters.supervisor === null
-                                        ? {}
-                                        : {
-                                              supervisor: String(
-                                                  filters.supervisor,
-                                              ),
-                                          }),
-                                }}
                                 selects={[
+                                    ...(weeks.length > 0
+                                        ? [
+                                              {
+                                                  name: 'week',
+                                                  label: 'Reporting week',
+                                                  value: String(week.id),
+                                                  options: weeks.map(
+                                                      (item) => ({
+                                                          value: String(
+                                                              item.id,
+                                                          ),
+                                                          label: item.label,
+                                                      }),
+                                                  ),
+                                              },
+                                          ]
+                                        : []),
+                                    ...(showTabs
+                                        ? [
+                                              {
+                                                  name: 'supervisor',
+                                                  label: 'Supervisor',
+                                                  value:
+                                                      filters.supervisor ===
+                                                      null
+                                                          ? ANY
+                                                          : String(
+                                                                filters.supervisor,
+                                                            ),
+                                                  searchable: true,
+                                                  options: [
+                                                      {
+                                                          value: ANY,
+                                                          label: t(
+                                                              'All supervisors',
+                                                          ),
+                                                      },
+                                                      ...supervisors.map(
+                                                          (supervisor) => ({
+                                                              value: String(
+                                                                  supervisor.id,
+                                                              ),
+                                                              label: supervisor.name,
+                                                          }),
+                                                      ),
+                                                  ],
+                                              },
+                                          ]
+                                        : []),
                                     {
                                         name: 'status',
                                         label: t('Status'),
@@ -314,6 +330,58 @@ export default function WeeklyReports({
                                     },
                                 ]}
                             />
+
+                            {(filters.supervisor !== null ||
+                                showSummaryCards) && (
+                                <SupervisorSummary
+                                    cards={board.supervisors}
+                                    selected={filters.supervisor}
+                                />
+                            )}
+
+                            <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                                {(
+                                    [
+                                        'not_started',
+                                        'draft',
+                                        'returned',
+                                        'submitted',
+                                        'approved',
+                                    ] as const
+                                ).map((state) => (
+                                    <span
+                                        key={state}
+                                        className="inline-flex items-center gap-1 rounded-full border bg-muted/30 px-2.5 py-0.5 text-[11px] text-muted-foreground tabular-nums"
+                                    >
+                                        <span className="font-semibold text-foreground">
+                                            {board.counts[state] ?? 0}
+                                        </span>
+                                        {reportStatusLabel(state).toLowerCase()}
+                                    </span>
+                                ))}
+                                {filters.supervisor === null &&
+                                    board.supervisors.length > 1 && (
+                                        <Button
+                                            type="button"
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-6 px-2 text-[11px] text-primary"
+                                            onClick={() =>
+                                                setShowSummaryCards(
+                                                    (prev) => !prev,
+                                                )
+                                            }
+                                        >
+                                            {showSummaryCards
+                                                ? t('Hide')
+                                                : t('Supervisors')}
+                                        </Button>
+                                    )}
+                                <span className="ml-auto text-[11px] text-muted-foreground">
+                                    {formatDate(week.due_on)} (
+                                    {formatDays(week.days)})
+                                </span>
+                            </div>
 
                             <DataTable
                                 columns={columns}
@@ -466,49 +534,6 @@ export default function WeeklyReports({
     );
 }
 
-function SupervisorTabs({
-    supervisors,
-    selected,
-    week,
-}: {
-    supervisors: SupervisorTerminals[];
-    selected: number | null;
-    week: ReportingWeek;
-}) {
-    useLocale();
-    const tabs = [
-        { id: null as number | null, name: 'All Supervisors' },
-        ...supervisors.map((supervisor) => ({
-            id: supervisor.id as number | null,
-            name: supervisor.name,
-        })),
-    ];
-
-    return (
-        <nav
-            aria-label={t('Supervisors')}
-            className="-mx-1 flex gap-1.5 overflow-x-auto px-1 pb-1"
-        >
-            {tabs.map((tab) => (
-                <Link
-                    key={tab.id ?? 'all'}
-                    href={`/reports?week=${week.id}${tab.id === null ? '' : `&supervisor=${tab.id}`}`}
-                    aria-current={selected === tab.id ? 'page' : undefined}
-                    preserveScroll
-                    className={cn(
-                        'shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-semibold whitespace-nowrap',
-                        selected === tab.id
-                            ? 'border-primary bg-primary text-primary-foreground'
-                            : 'bg-card text-muted-foreground hover:bg-[#eeeeff] hover:text-primary dark:hover:bg-primary/20',
-                    )}
-                >
-                    {tab.name}
-                </Link>
-            ))}
-        </nav>
-    );
-}
-
 function SupervisorSummary({
     cards,
     selected,
@@ -532,72 +557,51 @@ function SupervisorSummary({
                     : 'grid-cols-1 sm:max-w-sm',
             )}
         >
-            {shown.map((card) => (
-                <div
-                    key={card.supervisor_id}
-                    className={cn(
-                        'min-w-0 rounded-xl border p-3.5',
-                        shown.length === 1
-                            ? 'bg-[#eeeeff] dark:bg-primary/20'
-                            : 'bg-[#fafaff] dark:bg-muted',
-                    )}
-                >
-                    <p className="truncate text-xs text-muted-foreground">
-                        {card.supervisor}
-                    </p>
-                    <p className="mt-1 truncate text-lg font-bold text-primary tabular-nums">
-                        {formatPeso(card.approved_sales)}
-                    </p>
-                    <p className="text-[11px] text-muted-foreground">
-                        {card.encoded} {t('of')}
-                        {card.terminals}{' '}
-                        {t('terminals encoded · approved sales')}
-                    </p>
-                </div>
-            ))}
-        </div>
-    );
-}
-
-function WeekPicker({
-    weeks,
-    week,
-    supervisor,
-}: {
-    weeks: ReportingWeek[];
-    week: ReportingWeek;
-    supervisor: number | null;
-}) {
-    useLocale();
-    return (
-        <div className="min-w-60 space-y-1.5 sm:max-w-xs">
-            <Label htmlFor="week-picker" className="text-xs">
-                {t('Reporting week')}
-            </Label>
-            <Select
-                value={String(week.id)}
-                onValueChange={(value) =>
-                    router.get(
-                        '/reports',
-                        {
-                            week: value,
-                            ...(supervisor === null ? {} : { supervisor }),
-                        },
-                        { preserveState: false },
-                    )
-                }
-            >
-                <SelectTrigger id="week-picker" className="w-full bg-card">
-                    <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                    {weeks.map((item) => (
-                        <SelectItem key={item.id} value={String(item.id)}>
-                            {t(item.label)}
-                        </SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
+            {shown.map((card) => {
+                const pct =
+                    card.terminals > 0
+                        ? Math.min(
+                              100,
+                              Math.round((card.encoded / card.terminals) * 100),
+                          )
+                        : 0;
+                return (
+                    <div
+                        key={card.supervisor_id}
+                        className={cn(
+                            'min-w-0 rounded-xl border border-t-[3px] border-t-primary p-3.5 transition-colors',
+                            shown.length === 1
+                                ? 'bg-[#eeeeff] ring-1 ring-primary/15 dark:bg-primary/20'
+                                : 'bg-[#fafaff] hover:border-primary/25 dark:bg-muted',
+                        )}
+                    >
+                        <div className="flex items-center justify-between gap-2">
+                            <p className="truncate text-xs font-medium text-muted-foreground">
+                                {card.supervisor}
+                            </p>
+                            <span className="shrink-0 text-[10px] font-semibold text-muted-foreground tabular-nums">
+                                {pct}%
+                            </span>
+                        </div>
+                        <p className="mt-1 truncate text-lg font-bold text-primary tabular-nums">
+                            {formatPeso(card.approved_sales)}
+                        </p>
+                        <div
+                            className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-primary/10"
+                            aria-hidden="true"
+                        >
+                            <div
+                                className="h-full rounded-full bg-primary transition-all"
+                                style={{ width: `${pct}%` }}
+                            />
+                        </div>
+                        <p className="mt-1.5 text-[11px] text-muted-foreground">
+                            {card.encoded} {t('of')} {card.terminals}{' '}
+                            {t('terminals encoded · approved sales')}
+                        </p>
+                    </div>
+                );
+            })}
         </div>
     );
 }
@@ -606,24 +610,70 @@ function RowActions({
     row,
     week,
     canStart,
+    canAdminister,
 }: {
     row: BoardRow;
     week: ReportingWeek | null;
     canStart: boolean;
+    canAdminister: boolean;
 }) {
     useLocale();
     if (row.report_id !== null) {
+        if (canAdminister) {
+            if (row.status === 'submitted') {
+                return (
+                    <RowAction
+                        href={`/reports/${row.report_id}`}
+                        icon={Eye}
+                        tone="view"
+                        label={t('Review')}
+                    />
+                );
+            }
+
+            if (row.status === 'draft' || row.status === 'returned') {
+                return (
+                    <div className="flex items-center gap-2">
+                        <RowAction
+                            href={`/reports/${row.report_id}`}
+                            icon={Eye}
+                            tone="view"
+                            label={t('View :0 report', { '0': row.terminal })}
+                        />
+                        <RowAction
+                            href={`/reports/${row.report_id}/edit`}
+                            icon={Pencil}
+                            tone="edit"
+                            label={t('Edit')}
+                        />
+                    </div>
+                );
+            }
+
+            return (
+                <RowAction
+                    href={`/reports/${row.report_id}`}
+                    icon={Eye}
+                    tone="view"
+                    label={t('View :0 report', { '0': row.terminal })}
+                />
+            );
+        }
+
         const continuable =
             canStart && (row.status === 'draft' || row.status === 'returned');
 
         return continuable ? (
-            <Button variant="edit" size="sm" asChild>
-                <Link href={`/reports/${row.report_id}/edit`}>
-                    {row.status === 'returned'
+            <RowAction
+                href={`/reports/${row.report_id}/edit`}
+                icon={Pencil}
+                tone="edit"
+                label={
+                    row.status === 'returned'
                         ? t('Fix and resubmit')
-                        : t('Continue')}
-                </Link>
-            </Button>
+                        : t('Continue')
+                }
+            />
         ) : (
             <RowAction
                 href={`/reports/${row.report_id}`}
@@ -656,8 +706,15 @@ function RowActions({
                         name="reporting_week_id"
                         value={week.id}
                     />
-                    <Button type="submit" size="sm" disabled={processing}>
-                        {processing ? t('Opening…') : t('Encode')}
+                    <Button
+                        type="submit"
+                        size="icon"
+                        variant="edit"
+                        disabled={processing}
+                        aria-label={t('Encode')}
+                        title={t('Encode')}
+                    >
+                        <Plus aria-hidden="true" />
                     </Button>
                 </>
             )}

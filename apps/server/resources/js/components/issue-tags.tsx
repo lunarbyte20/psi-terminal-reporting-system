@@ -2,14 +2,29 @@ import { t, useLocale } from '@/lib/i18n';
 import type { IssueTag } from '@/types';
 
 /** The stored color is shared by every screen and print view. Text contrast is computed. */
-export function IssueTags({ tags = [] }: { tags?: IssueTag[] }) {
+export function IssueTags({
+    tags = [],
+    maxVisible,
+}: {
+    tags?: IssueTag[];
+    maxVisible?: number;
+}) {
     useLocale();
+    const visible =
+        maxVisible !== undefined && tags.length > maxVisible
+            ? tags.slice(0, maxVisible)
+            : tags;
+    const hidden =
+        maxVisible !== undefined && tags.length > maxVisible
+            ? tags.slice(maxVisible)
+            : [];
+
     return (
         <span
-            className="inline-flex flex-wrap gap-1"
+            className="inline-flex flex-wrap items-center gap-1"
             aria-label={t('Issue tags')}
         >
-            {tags.map((tag) => {
+            {visible.map((tag) => {
                 const hex = tag.color.slice(1);
                 const channels = [0, 2, 4]
                     .map(
@@ -40,6 +55,14 @@ export function IssueTags({ tags = [] }: { tags?: IssueTag[] }) {
                     </span>
                 );
             })}
+            {hidden.length > 0 && (
+                <span
+                    title={hidden.map((tag) => tag.name).join(', ')}
+                    className="inline-flex items-center rounded border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                >
+                    +{hidden.length}
+                </span>
+            )}
         </span>
     );
 }

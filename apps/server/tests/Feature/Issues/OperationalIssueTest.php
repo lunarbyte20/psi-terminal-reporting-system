@@ -55,6 +55,78 @@ class OperationalIssueTest extends TestCase
         $this->assertDatabaseHas('activity_log', ['description' => 'issue.created', 'subject_id' => $issue->id]);
     }
 
+    public function test_only_admin_can_set_requires_ceo_decision(): void
+    {
+        [$supervisorUser, $supervisor] = $this->supervisorAccount('Rhoda Maquiling');
+        $terminal = $this->terminalFor($supervisor, 'SM Taytay');
+        $this->weekContaining('2026-10-14');
+
+        $this->actingAs($supervisorUser)->post(route('issues.store'), [
+            'key_issue' => 'Supervisor raised issue',
+            'status' => 'pending',
+            'priority' => 'high',
+            'requires_ceo_decision' => true,
+            'terminal_id' => $terminal->id,
+        ])->assertRedirect();
+
+        $created = OperationalIssue::query()->sole();
+        $this->assertFalse($created->requires_ceo_decision);
+        $this->assertSame('medium', $created->priority->value);
+
+        $created->forceFill(['requires_ceo_decision' => true, 'priority' => 'high'])->save();
+
+        $this->actingAs($supervisorUser)->put(route('issues.update', $created), [
+            'key_issue' => 'Supervisor updated issue',
+            'status' => 'ongoing',
+            'priority' => 'low',
+            'requires_ceo_decision' => false,
+            'terminal_id' => $terminal->id,
+        ])->assertRedirect();
+
+        $this->assertTrue($created->fresh()->requires_ceo_decision);
+        $this->assertSame('high', $created->fresh()->priority->value);
+    }
+
+    public function test_admin_can_quick_update_issue_status_and_supervisor_cannot(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+        [$supervisorUser, $supervisor] = $this->supervisorAccount('Rhoda Maquiling');
+        $terminal = $this->terminalFor($supervisor, 'SM Taytay');
+        $issue = $this->issue(['key_issue' => 'Broken gate', 'terminal_id' => $terminal->id]);
+
+        $this->actingAs($supervisorUser)
+            ->patch(route('issues.status', $issue), ['status' => 'completed'])
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->patch(route('issues.status', $issue), ['status' => 'completed'])
+            ->assertRedirect();
+
+        $this->assertSame(IssueStatus::Completed, $issue->fresh()?->status);
+        $this->assertNotNull($issue->fresh()?->completed_at);
+    }
+
+    public function test_admin_can_bulk_update_issue_status_and_supervisor_cannot(): void
+    {
+        $admin = $this->userWithRole(Role::Admin);
+        [$supervisorUser, $supervisor] = $this->supervisorAccount('Rhoda Maquiling');
+        $terminal = $this->terminalFor($supervisor, 'SM Taytay');
+        $a = $this->issue(['key_issue' => 'Issue A', 'terminal_id' => $terminal->id]);
+        $b = $this->issue(['key_issue' => 'Issue B', 'terminal_id' => $terminal->id]);
+
+        $this->actingAs($supervisorUser)
+            ->post(route('issues.bulk-status'), ['ids' => [$a->id, $b->id], 'status' => 'completed'])
+            ->assertForbidden();
+
+        $this->actingAs($admin)
+            ->post(route('issues.bulk-status'), ['ids' => [$a->id, $b->id], 'status' => 'completed'])
+            ->assertRedirect();
+
+        $this->assertSame(IssueStatus::Completed, $a->fresh()?->status);
+        $this->assertSame(IssueStatus::Completed, $b->fresh()?->status);
+        $this->assertNotNull($a->fresh()?->completed_at);
+    }
+
     public function test_open_issues_carry_forward_and_overdue_ones_are_flagged(): void
     {
         $admin = $this->userWithRole(Role::Admin);
@@ -132,7 +204,8 @@ class OperationalIssueTest extends TestCase
 
         $this->actingAs($supervisorUser)->put(route('issues.update', $mineIssue), ['key_issue' => 'Gate barrier fixed', 'status' => 'completed', 'terminal_id' => $myTerminal->id])
             ->assertRedirect();
-        $this->assertSame(IssueStatus::Completed, $mineIssue->fresh()?->status);
+        // Only the Admin changes issue status; supervisor edits preserve the existing status.
+        $this->assertSame(IssueStatus::Pending, $mineIssue->fresh()?->status);
 
         // Not for someone else's terminal, not without a terminal, never moved away, and never deleted.
         $this->actingAs($supervisorUser)->post(route('issues.store'), ['key_issue' => 'X', 'status' => 'pending', 'terminal_id' => $otherTerminal->id])->assertForbidden();

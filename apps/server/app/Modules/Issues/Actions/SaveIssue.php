@@ -3,11 +3,13 @@
 namespace App\Modules\Issues\Actions;
 
 use App\Models\User;
+use App\Modules\Accounts\Actions\NotifyAdmins;
 use App\Modules\Issues\Data\IssueInput;
 use App\Modules\Issues\Enums\IssueStatus;
 use App\Modules\Issues\Models\IssueTag;
 use App\Modules\Issues\Models\OperationalIssue;
 use App\Modules\Reporting\Models\ReportingWeek;
+use App\Modules\Reporting\Notifications\SupervisorActivityNotification;
 use App\Modules\Terminals\Models\Terminal;
 use App\Support\Audit\RecordChange;
 use Illuminate\Support\Facades\DB;
@@ -27,7 +29,10 @@ class SaveIssue
         'reported_on', 'status', 'priority', 'requires_ceo_decision', 'remarks', 'terminal_id', 'supervisor_id',
     ];
 
-    public function __construct(private readonly RecordChange $audit) {}
+    public function __construct(
+        private readonly RecordChange $audit,
+        private readonly NotifyAdmins $notifyAdmins,
+    ) {}
 
     public function execute(User $actor, ?OperationalIssue $issue, IssueInput $input): OperationalIssue
     {
@@ -88,6 +93,19 @@ class SaveIssue
             }
 
             $this->audit->execute($actor, $issue, $creating ? 'issue.created' : 'issue.updated', $before, $this->snapshot($issue));
+
+            $issue->loadMissing('terminal:id,name');
+            $terminalName = $issue->terminal->name ?? 'General';
+            $this->notifyAdmins->execute(
+                $actor,
+                new SupervisorActivityNotification(
+                    $creating ? 'Issue added: :terminal' : 'Issue updated: :terminal',
+                    ['terminal' => $terminalName],
+                    $creating ? ':supervisor recorded an issue: :issue' : ':supervisor updated an issue: :issue',
+                    ['supervisor' => $actor->name, 'issue' => $issue->key_issue],
+                    '/issues/'.$issue->id,
+                ),
+            );
 
             return $issue;
         });

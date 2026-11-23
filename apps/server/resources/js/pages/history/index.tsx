@@ -32,7 +32,7 @@ export default function ReportHistory({
                     description={t('Browse saved reporting periods.')}
                 />
                 <Panel
-                    title={t('Report History')}
+                    title={t('Reporting weeks')}
                     description={t(
                         'Saved reporting weeks and historical terminal results. Totals count approved reports only.',
                     )}
@@ -65,14 +65,27 @@ export default function ReportHistory({
                                                 {formatPeso(week.sales)}
                                             </p>
                                         </div>
-                                        <p className="mt-1 text-xs text-muted-foreground">
-                                            {formatCount(week.ridership)}{' '}
-                                            {t('riders ·')}
-                                            {week.approved} {t('approved ·')}{' '}
-                                            {week.waiting} {t('waiting ·')}{' '}
-                                            {week.in_progress}{' '}
-                                            {t('in progress')}
-                                        </p>
+                                        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 text-[11px] tabular-nums">
+                                            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+                                                {formatCount(week.ridership)}{' '}
+                                                {t('riders')}
+                                            </span>
+                                            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                                {week.approved} {t('Approved')}
+                                            </span>
+                                            {week.waiting > 0 && (
+                                                <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                                                    {week.waiting}{' '}
+                                                    {t('Waiting')}
+                                                </span>
+                                            )}
+                                            {week.in_progress > 0 && (
+                                                <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 font-medium text-muted-foreground">
+                                                    {week.in_progress}{' '}
+                                                    {t('In progress')}
+                                                </span>
+                                            )}
+                                        </div>
                                         <div className="mt-2 flex flex-wrap gap-1.5">
                                             <Button
                                                 asChild
@@ -124,16 +137,10 @@ export default function ReportHistory({
                                             <th className="px-2.5 py-2.5 text-right">
                                                 {t('Ridership')}
                                             </th>
-                                            <th className="px-2.5 py-2.5 text-right">
-                                                {t('Approved')}
-                                            </th>
-                                            <th className="px-2.5 py-2.5 text-right">
-                                                {t('Waiting')}
-                                            </th>
-                                            <th className="px-2.5 py-2.5 text-right">
-                                                {t('In progress')}
-                                            </th>
                                             <th className="px-2.5 py-2.5 text-left">
+                                                {t('Status')}
+                                            </th>
+                                            <th className="px-2.5 py-2.5 text-right">
                                                 {t('Open')}
                                             </th>
                                         </tr>
@@ -142,10 +149,15 @@ export default function ReportHistory({
                                         {weeks.data.map((week) => (
                                             <tr
                                                 key={week.id}
-                                                className="border-b last:border-0"
+                                                className="border-b transition-colors last:border-0 hover:bg-muted/30"
                                             >
                                                 <td className="px-2.5 py-2.5 font-semibold">
-                                                    {t(week.label)}
+                                                    <Link
+                                                        href={`/dashboard?week=${week.id}`}
+                                                        className="hover:text-primary hover:underline"
+                                                    >
+                                                        {t(week.label)}
+                                                    </Link>
                                                     {week.days !== 7 && (
                                                         <span className="ml-1 font-normal text-muted-foreground">
                                                             (
@@ -156,10 +168,10 @@ export default function ReportHistory({
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td className="px-2.5 py-2.5">
+                                                <td className="px-2.5 py-2.5 text-muted-foreground">
                                                     {formatDate(week.due_on)}
                                                 </td>
-                                                <td className="px-2.5 py-2.5 text-right tabular-nums">
+                                                <td className="px-2.5 py-2.5 text-right font-semibold text-primary tabular-nums">
                                                     {formatPeso(week.sales)}
                                                 </td>
                                                 <td className="px-2.5 py-2.5 text-right tabular-nums">
@@ -167,31 +179,36 @@ export default function ReportHistory({
                                                         week.ridership,
                                                     )}
                                                 </td>
-                                                <td className="px-2.5 py-2.5 text-right tabular-nums">
-                                                    {week.approved}
-                                                </td>
-                                                <td className="px-2.5 py-2.5 text-right tabular-nums">
-                                                    {week.waiting}
-                                                </td>
-                                                <td className="px-2.5 py-2.5 text-right tabular-nums">
-                                                    {week.in_progress}
+                                                <td className="px-2.5 py-2.5 tabular-nums">
+                                                    <div className="flex flex-wrap items-center gap-1.5">
+                                                        <span className="inline-flex items-center rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                                            {week.approved}{' '}
+                                                            {t('Approved')}
+                                                        </span>
+                                                        {week.waiting > 0 && (
+                                                            <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                                                                {week.waiting}{' '}
+                                                                {t('Waiting')}
+                                                            </span>
+                                                        )}
+                                                        {week.in_progress >
+                                                            0 && (
+                                                            <span className="inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                                                                {
+                                                                    week.in_progress
+                                                                }{' '}
+                                                                {t(
+                                                                    'In progress',
+                                                                )}
+                                                            </span>
+                                                        )}
+                                                    </div>
                                                 </td>
                                                 <td className="px-2.5 py-2">
-                                                    <div className="flex gap-1.5">
+                                                    <div className="flex justify-end gap-1">
                                                         <Button
                                                             asChild
-                                                            variant="view"
-                                                            size="sm"
-                                                        >
-                                                            <Link
-                                                                href={`/dashboard?week=${week.id}`}
-                                                            >
-                                                                {t('Dashboard')}
-                                                            </Link>
-                                                        </Button>
-                                                        <Button
-                                                            asChild
-                                                            variant="outline"
+                                                            variant="ghost"
                                                             size="sm"
                                                         >
                                                             <Link

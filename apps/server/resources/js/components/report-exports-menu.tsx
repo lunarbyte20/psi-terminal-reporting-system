@@ -4,7 +4,6 @@ import {
     Eye,
     FileDown,
     FileSpreadsheet,
-    FileText,
     Printer,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -102,15 +101,6 @@ export function ReportExportsMenu({
                         >
                             <FileSpreadsheet aria-hidden="true" />
                             {t('Excel (.xlsx)')}
-                        </a>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem asChild>
-                        <a
-                            href={`${base}/terminal-sales.csv`}
-                            className="cursor-pointer"
-                        >
-                            <FileText aria-hidden="true" />
-                            {t('CSV')}
                         </a>
                     </DropdownMenuItem>
                 </DropdownMenuGroup>

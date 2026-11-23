@@ -36,7 +36,7 @@ export function NavCollapsible({
     items: NavItem[];
 }) {
     useLocale();
-    const { state, isMobile } = useSidebar();
+    const { state, isMobile, setOpenMobile } = useSidebar();
     const { isCurrentOrParentUrl } = useCurrentUrl();
     const containsCurrent = items.some((item) =>
         isCurrentOrParentUrl(item.href),
@@ -79,7 +79,14 @@ export function NavCollapsible({
                                                 item.href,
                                             )}
                                         >
-                                            <Link href={item.href} prefetch>
+                                            <Link
+                                                href={item.href}
+                                                prefetch
+                                                onClick={() =>
+                                                    isMobile &&
+                                                    setOpenMobile(false)
+                                                }
+                                            >
                                                 {item.icon && <item.icon />}
                                                 <span>{t(item.title)}</span>
                                             </Link>

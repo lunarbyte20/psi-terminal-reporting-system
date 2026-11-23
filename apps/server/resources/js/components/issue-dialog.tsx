@@ -3,7 +3,7 @@ import { Form, usePage } from '@inertiajs/react';
 import { IssueTags } from '@/components/issue-tags';
 import type { IssueTag } from '@/types';
 import { Pencil, Plus } from 'lucide-react';
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { fieldAria, FormField } from '@/components/form-field';
 import { ISSUE_PRIORITIES } from '@/components/issue-priority-badge';
 import { RowAction } from '@/components/row-action';
@@ -46,6 +46,7 @@ export function IssueDialog({
     fixedTerminal,
     triggerLabel = 'Add issue',
     variant = 'default',
+    trigger,
 }: {
     issue?: OperationalIssue;
     statuses: Option[];
@@ -54,6 +55,7 @@ export function IssueDialog({
     fixedTerminal?: NamedRecord;
     triggerLabel?: string;
     variant?: 'default' | 'outline';
+    trigger?: ReactNode;
 }) {
     useLocale();
     const { auth, issueTags } = usePage().props;
@@ -93,14 +95,18 @@ export function IssueDialog({
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             {editing ? (
-                <RowAction
-                    icon={Pencil}
-                    tone="edit"
-                    label={t('Edit issue: :0', { '0': issue.key_issue })}
-                    trigger={(button) => (
-                        <DialogTrigger asChild>{button}</DialogTrigger>
-                    )}
-                />
+                trigger ? (
+                    <DialogTrigger asChild>{trigger}</DialogTrigger>
+                ) : (
+                    <RowAction
+                        icon={Pencil}
+                        tone="edit"
+                        label={t('Edit issue: :0', { '0': issue.key_issue })}
+                        trigger={(button) => (
+                            <DialogTrigger asChild>{button}</DialogTrigger>
+                        )}
+                    />
+                )
             ) : (
                 <DialogTrigger asChild>
                     <Button size="sm" variant={variant}>
@@ -314,74 +320,6 @@ export function IssueDialog({
                                     />
                                 </FormField>
                                 <FormField
-                                    id="issue-status"
-                                    label={t('Status')}
-                                    required
-                                    error={errors.status}
-                                >
-                                    <Select
-                                        value={status}
-                                        onValueChange={(value) =>
-                                            setStatus(value as typeof status)
-                                        }
-                                    >
-                                        <SelectTrigger
-                                            id="issue-status"
-                                            className="w-full"
-                                        >
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {statuses.map((option) => (
-                                                <SelectItem
-                                                    key={option.value}
-                                                    value={option.value}
-                                                >
-                                                    {t(option.label)}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <input
-                                        type="hidden"
-                                        name="status"
-                                        value={status}
-                                    />
-                                </FormField>
-                                <FormField
-                                    id="issue-priority"
-                                    label={t('Priority')}
-                                    required
-                                    error={errors.priority}
-                                >
-                                    <Select
-                                        value={priority}
-                                        onValueChange={setPriority}
-                                    >
-                                        <SelectTrigger
-                                            id="issue-priority"
-                                            className="w-full"
-                                        >
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            {ISSUE_PRIORITIES.map((option) => (
-                                                <SelectItem
-                                                    key={option.value}
-                                                    value={option.value}
-                                                >
-                                                    {t(option.label)}
-                                                </SelectItem>
-                                            ))}
-                                        </SelectContent>
-                                    </Select>
-                                    <input
-                                        type="hidden"
-                                        name="priority"
-                                        value={priority}
-                                    />
-                                </FormField>
-                                <FormField
                                     id="issue-reported"
                                     label={t('Reporting date')}
                                     hint={t(
@@ -452,30 +390,114 @@ export function IssueDialog({
                                 />
                             </FormField>
 
-                            <div className="flex items-start gap-3 rounded-md border p-3">
-                                <Checkbox
-                                    id="issue-ceo"
-                                    checked={ceo}
-                                    onCheckedChange={(value) =>
-                                        setCeo(value === true)
-                                    }
-                                />
-                                <div className="space-y-0.5">
-                                    <Label htmlFor="issue-ceo">
-                                        {t('Requires CEO decision')}
-                                    </Label>
-                                    <p className="text-xs text-muted-foreground">
-                                        {t(
-                                            "Flags it on the CEO's dashboard until resolved.",
-                                        )}
-                                    </p>
-                                </div>
-                                <input
-                                    type="hidden"
-                                    name="requires_ceo_decision"
-                                    value={ceo ? '1' : '0'}
-                                />
-                            </div>
+                            {auth.can.administer && (
+                                <>
+                                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                        <FormField
+                                            id="issue-status"
+                                            label={t('Status')}
+                                            required
+                                            error={errors.status}
+                                        >
+                                            <Select
+                                                value={status}
+                                                onValueChange={(value) =>
+                                                    setStatus(
+                                                        value as typeof status,
+                                                    )
+                                                }
+                                            >
+                                                <SelectTrigger
+                                                    id="issue-status"
+                                                    className="w-full"
+                                                >
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {statuses.map((option) => (
+                                                        <SelectItem
+                                                            key={option.value}
+                                                            value={option.value}
+                                                        >
+                                                            {t(option.label)}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                            <input
+                                                type="hidden"
+                                                name="status"
+                                                value={status}
+                                            />
+                                        </FormField>
+                                        <FormField
+                                            id="issue-priority"
+                                            label={t('Priority')}
+                                            required
+                                            error={errors.priority}
+                                        >
+                                            <Select
+                                                value={priority}
+                                                onValueChange={setPriority}
+                                            >
+                                                <SelectTrigger
+                                                    id="issue-priority"
+                                                    className="w-full"
+                                                >
+                                                    <SelectValue />
+                                                </SelectTrigger>
+                                                <SelectContent>
+                                                    {ISSUE_PRIORITIES.map(
+                                                        (option) => (
+                                                            <SelectItem
+                                                                key={
+                                                                    option.value
+                                                                }
+                                                                value={
+                                                                    option.value
+                                                                }
+                                                            >
+                                                                {t(
+                                                                    option.label,
+                                                                )}
+                                                            </SelectItem>
+                                                        ),
+                                                    )}
+                                                </SelectContent>
+                                            </Select>
+                                            <input
+                                                type="hidden"
+                                                name="priority"
+                                                value={priority}
+                                            />
+                                        </FormField>
+                                    </div>
+                                    <div className="flex items-start gap-3 rounded-md border p-3">
+                                        <Checkbox
+                                            id="issue-ceo"
+                                            checked={ceo}
+                                            onCheckedChange={(value) =>
+                                                setCeo(value === true)
+                                            }
+                                        />
+                                        <div className="space-y-0.5">
+                                            <Label htmlFor="issue-ceo">
+                                                {t('Requires CEO decision')}
+                                            </Label>
+                                            <p className="text-xs text-muted-foreground">
+                                                {t(
+                                                    "Flags it on the CEO's dashboard until resolved.",
+                                                )}
+                                            </p>
+                                        </div>
+                                        <input
+                                            type="hidden"
+                                            name="requires_ceo_decision"
+                                            value={ceo ? '1' : '0'}
+                                        />
+                                    </div>
+                                </>
+                            )}
 
                             {auth.can.administer && (
                                 <fieldset className="space-y-2">

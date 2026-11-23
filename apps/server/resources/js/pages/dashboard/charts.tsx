@@ -167,29 +167,35 @@ export function DonutChart({
                     role="img"
                     aria-label={t(ariaLabel)}
                 >
-                    {paths.map(({ slice, color, d }) =>
-                        d === null ? (
-                            <circle
-                                key={slice.key}
-                                cx={cx}
-                                cy={cy}
-                                r={r}
-                                fill={color}
-                                stroke="#ffffff"
-                                strokeWidth="1.5"
-                            />
-                        ) : (
-                            <path
-                                key={slice.key}
-                                d={d}
-                                fill={color}
-                                stroke="#ffffff"
-                                strokeWidth="1.5"
-                            />
-                        ),
-                    )}
+                    <g className="chart-pie">
+                        {paths.map(({ slice, color, d }) =>
+                            d === null ? (
+                                <circle
+                                    key={slice.key}
+                                    cx={cx}
+                                    cy={cy}
+                                    r={r}
+                                    fill={color}
+                                    stroke="#ffffff"
+                                    strokeWidth="1.5"
+                                />
+                            ) : (
+                                <path
+                                    key={slice.key}
+                                    d={d}
+                                    fill={color}
+                                    stroke="#ffffff"
+                                    strokeWidth="1.5"
+                                />
+                            ),
+                        )}
+                    </g>
                     {callouts.map((c) => (
-                        <g key={`callout-${c.slice.key}`} aria-hidden="true">
+                        <g
+                            key={`callout-${c.slice.key}`}
+                            className="chart-callout"
+                            aria-hidden="true"
+                        >
                             <polyline
                                 points={`${c.dotX},${c.dotY} ${c.elbowX},${c.labelY} ${c.lineEndX},${c.labelY}`}
                                 fill="none"
@@ -311,7 +317,7 @@ export function SupervisorRankingChart({ rows }: { rows: SupervisorResult[] }) {
 
     return (
         <ul className="space-y-2 text-xs print:space-y-1.5 print:text-[10px]">
-            {rows.map((row) => (
+            {rows.map((row, index) => (
                 <li key={row.supervisor_id ?? 'none'}>
                     <div className="mb-0.5 flex justify-between gap-2">
                         <span className="min-w-0 truncate">
@@ -326,9 +332,10 @@ export function SupervisorRankingChart({ rows }: { rows: SupervisorResult[] }) {
                         aria-hidden="true"
                     >
                         <div
-                            className="h-2 rounded-sm bg-[var(--chart-series-1,#1a1990)]"
+                            className="chart-bar-x h-2 rounded-sm bg-[var(--chart-series-1,#1a1990)]"
                             style={{
                                 width: `${(amount(row.current) / largest) * 100}%`,
+                                animationDelay: `${index * 45}ms`,
                             }}
                         />
                     </div>
@@ -397,6 +404,8 @@ export function WeeklySalesTrendChart({
                                 width={step * 0.64}
                                 height={barHeight}
                                 rx="3"
+                                className="chart-bar-y"
+                                style={{ animationDelay: `${index * 50}ms` }}
                                 fill={
                                     selected ? CHART_COLORS[0] : CHART_COLORS[3]
                                 }
@@ -473,7 +482,7 @@ export function TerminalComparisonChart({ rows }: { rows: TerminalResult[] }) {
                 </span>
             </div>
             <ul className="grid grid-cols-1 gap-x-8 gap-y-2.5 lg:grid-cols-2 print:grid-cols-2 print:gap-y-1.5">
-                {counted.map((row) => (
+                {counted.map((row, index) => (
                     <li key={row.terminal_id} className="text-xs">
                         <div className="mb-1 flex justify-between gap-3">
                             <span className="truncate font-medium">
@@ -486,15 +495,17 @@ export function TerminalComparisonChart({ rows }: { rows: TerminalResult[] }) {
                         </div>
                         <div className="space-y-0.5" aria-hidden="true">
                             <div
-                                className="h-2 rounded-full bg-[var(--chart-series-1,#1a1990)]"
+                                className="chart-bar-x h-2 rounded-full bg-[var(--chart-series-1,#1a1990)]"
                                 style={{
                                     width: `${(amount(row.current) / largest) * 100}%`,
+                                    animationDelay: `${Math.min(index, 12) * 30}ms`,
                                 }}
                             />
                             <div
-                                className="h-1.5 rounded-full bg-[var(--chart-series-3,#d4a017)]"
+                                className="chart-bar-x h-1.5 rounded-full bg-[var(--chart-series-3,#d4a017)]"
                                 style={{
                                     width: `${(amount(row.previous) / largest) * 100}%`,
+                                    animationDelay: `${Math.min(index, 12) * 30 + 60}ms`,
                                 }}
                             />
                         </div>

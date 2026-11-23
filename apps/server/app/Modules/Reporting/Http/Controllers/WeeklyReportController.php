@@ -74,6 +74,7 @@ class WeeklyReportController extends Controller
                 'update' => Gate::allows('update', $report),
                 'review' => Gate::allows('review', $report),
                 'reopen' => Gate::allows('reopen', $report),
+                'requestReopen' => Gate::allows('requestReopen', $report),
             ],
             'categories' => SalesCategory::options(),
         ]);

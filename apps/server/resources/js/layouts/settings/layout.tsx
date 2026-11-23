@@ -1,9 +1,8 @@
 import { t, useLocale } from '@/lib/i18n';
 import { Link } from '@inertiajs/react';
+import { Shield, User } from 'lucide-react';
 import type { PropsWithChildren } from 'react';
-import Heading from '@/components/heading';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
+import { PageHeader } from '@/components/page-header';
 import { useCurrentUrl } from '@/hooks/use-current-url';
 import { cn, toUrl } from '@/lib/utils';
 import { edit } from '@/routes/profile';
@@ -14,12 +13,12 @@ const sidebarNavItems: NavItem[] = [
     {
         title: 'Profile',
         href: edit(),
-        icon: null,
+        icon: User,
     },
     {
         title: 'Security',
         href: editSecurity(),
-        icon: null,
+        icon: Shield,
     },
 ];
 
@@ -28,45 +27,41 @@ export default function SettingsLayout({ children }: PropsWithChildren) {
     const { isCurrentOrParentUrl } = useCurrentUrl();
 
     return (
-        <div className="p-6">
-            <Heading
+        <main className="grid w-full grid-cols-1 gap-4 p-4 sm:p-6 lg:px-[3.5%] lg:py-8">
+            <PageHeader
                 title={t('Settings')}
                 description={t('Manage your profile and account settings')}
             />
 
-            <div className="flex flex-col lg:flex-row lg:space-x-12">
-                <aside className="w-full lg:w-48">
-                    <nav
-                        className="flex flex-col space-y-1 space-x-0"
-                        aria-label={t('Settings')}
-                    >
-                        {sidebarNavItems.map((item, index) => (
-                            <Button
-                                key={`${toUrl(item.href)}-${index}`}
-                                size="sm"
-                                variant="ghost"
-                                asChild
-                                className={cn('w-full justify-start', {
-                                    'bg-muted': isCurrentOrParentUrl(item.href),
-                                })}
-                            >
-                                <Link href={item.href}>
-                                    {item.icon && (
-                                        <item.icon className="h-4 w-4" />
-                                    )}
-                                    {t(item.title)}
-                                </Link>
-                            </Button>
-                        ))}
-                    </nav>
-                </aside>
+            <nav
+                className="flex flex-wrap gap-1.5 border-b pb-3"
+                aria-label={t('Settings')}
+            >
+                {sidebarNavItems.map((item, index) => {
+                    const active = isCurrentOrParentUrl(item.href);
+                    const Icon = item.icon;
+                    return (
+                        <Link
+                            key={`${toUrl(item.href)}-${index}`}
+                            href={item.href}
+                            aria-current={active ? 'page' : undefined}
+                            className={cn(
+                                'inline-flex items-center gap-2 rounded-full border px-4 py-1.5 text-xs font-semibold transition-colors',
+                                active
+                                    ? 'border-primary bg-primary text-primary-foreground'
+                                    : 'bg-card text-muted-foreground hover:bg-[#eeeeff] hover:text-primary dark:hover:bg-primary/20',
+                            )}
+                        >
+                            {Icon && (
+                                <Icon className="size-3.5" aria-hidden="true" />
+                            )}
+                            {t(item.title)}
+                        </Link>
+                    );
+                })}
+            </nav>
 
-                <Separator className="my-6 lg:hidden" />
-
-                <div className="min-w-0 flex-1">
-                    <section className="space-y-12">{children}</section>
-                </div>
-            </div>
-        </div>
+            <div className="min-w-0 space-y-5">{children}</div>
+        </main>
     );
 }

@@ -94,7 +94,7 @@ export function FormSection({
     return (
         <section
             className={cn(
-                'flex h-full min-w-0 flex-col space-y-4 rounded-lg border bg-card p-5 sm:p-6',
+                'flex h-full min-w-0 flex-col space-y-4 rounded-xl border border-t-[3px] border-t-primary bg-card p-5 sm:p-6',
                 className,
             )}
         >

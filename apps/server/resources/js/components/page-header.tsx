@@ -56,7 +56,7 @@ export function Panel({
     useLocale();
     return (
         <section
-            className={`min-w-0 rounded-xl border bg-card p-4 sm:p-5 print:break-inside-avoid ${className}`}
+            className={`min-w-0 rounded-xl border border-t-[3px] border-t-primary bg-card p-4 sm:p-5 print:break-inside-avoid ${className}`}
             aria-label={title}
         >
             <div className="mb-3.5 flex items-start justify-between gap-4">

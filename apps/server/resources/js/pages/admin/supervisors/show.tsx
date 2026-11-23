@@ -42,7 +42,7 @@ export default function SupervisorShow({
     return (
         <>
             <Head title={supervisor.name} />
-            <main className="grid w-full grid-cols-1 gap-6 p-6">
+            <main className="grid w-full grid-cols-1 gap-6 p-4 sm:p-6 lg:px-[3.5%] lg:py-8">
                 <Heading
                     title={supervisor.name}
                     badge={
@@ -65,7 +65,7 @@ export default function SupervisorShow({
                     <OneTimePassword password={temporaryPassword} />
                 )}
 
-                <section className="rounded-lg border bg-card p-5 sm:p-6">
+                <section className="rounded-xl border border-t-[3px] border-t-primary bg-card p-5 sm:p-6">
                     <dl className="grid gap-4 sm:grid-cols-2">
                         <div>
                             <dt className="text-sm text-muted-foreground">

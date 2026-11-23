@@ -84,8 +84,8 @@ export function TerminalBreakdown({ rows }: { rows: TerminalResult[] }) {
 
     return (
         <div className="space-y-3">
-            <div className="flex flex-wrap items-end gap-3 print:hidden">
-                <div className="min-w-44 flex-1 space-y-1.5">
+            <div className="grid grid-cols-1 gap-2.5 sm:flex sm:flex-wrap sm:items-end sm:gap-3 print:hidden">
+                <div className="w-full space-y-1.5 sm:max-w-xs sm:flex-1">
                     <Label htmlFor="breakdown-search" className="text-xs">
                         {t('Search terminal')}
                     </Label>
@@ -96,25 +96,30 @@ export function TerminalBreakdown({ rows }: { rows: TerminalResult[] }) {
                         maxLength={100}
                     />
                 </div>
-                <div className="min-w-44 space-y-1.5">
-                    <Label htmlFor="breakdown-supervisor" className="text-xs">
-                        {t('Supervisor')}
-                    </Label>
-                    <SearchableSelect
-                        id="breakdown-supervisor"
-                        value={supervisor}
-                        onChange={setSupervisor}
-                        options={[
-                            { value: ALL, label: t('All supervisors') },
-                            ...supervisors.map((name) => ({
-                                value: name,
-                                label: name,
-                            })),
-                        ]}
-                        searchPlaceholder="Search supervisors"
-                    />
-                </div>
-                <div className="min-w-44 space-y-1.5">
+                {supervisors.length > 1 && (
+                    <div className="w-full space-y-1.5 sm:w-48">
+                        <Label
+                            htmlFor="breakdown-supervisor"
+                            className="text-xs"
+                        >
+                            {t('Supervisor')}
+                        </Label>
+                        <SearchableSelect
+                            id="breakdown-supervisor"
+                            value={supervisor}
+                            onChange={setSupervisor}
+                            options={[
+                                { value: ALL, label: t('All supervisors') },
+                                ...supervisors.map((name) => ({
+                                    value: name,
+                                    label: name,
+                                })),
+                            ]}
+                            searchPlaceholder="Search supervisors"
+                        />
+                    </div>
+                )}
+                <div className="w-full space-y-1.5 sm:w-48">
                     <Label htmlFor="breakdown-sort" className="text-xs">
                         {t('Sort by')}
                     </Label>

@@ -179,6 +179,7 @@ export default function ReportEdit({
             },
             {
                 preserveScroll: (page) =>
+                    intent === 'save' &&
                     Object.keys(page.props.errors ?? {}).length === 0,
                 onSuccess: () => discardLocalDraft(),
                 onStart: () => setProcessing(intent),
@@ -218,8 +219,10 @@ export default function ReportEdit({
                         className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-100"
                     >
                         <span>
-                            {t('Unsaved local draft from')}
-                            {pendingRestore.savedAt}{' '}
+                            {t('Unsaved local draft from')}{' '}
+                            <span className="font-medium">
+                                {pendingRestore.savedAt}
+                            </span>{' '}
                             {t('was found in this browser.')}
                         </span>
                         <div className="flex gap-2">
@@ -242,121 +245,156 @@ export default function ReportEdit({
                     </div>
                 )}
 
-                {returnNote ? (
+                {returnNote && (
                     <div
                         role="status"
-                        className="rounded-lg border border-status-danger-border bg-status-danger-bg p-4 text-status-danger-fg"
+                        className="rounded-xl border border-status-danger-border bg-status-danger-bg p-4 text-status-danger-fg"
                     >
                         <p className="font-semibold">
-                            {t('Returned by')}
-                            {returnNote.by}
+                            {t('Returned by')} {returnNote.by}
                             {t(': please correct and submit again')}
                         </p>
                         <p className="mt-1 text-sm whitespace-pre-line">
                             {returnNote.comment}
                         </p>
                     </div>
-                ) : (
-                    <RequirementGuide
-                        title={t('How to fill in this report')}
-                        summary={t(
-                            "Encode the week's sales and ridership. Your work is kept when you save a draft.",
-                        )}
-                        items={[
-                            {
-                                label: t('Save draft'),
-                                detail: t(
-                                    'Keeps your figures so you can finish later.',
-                                ),
-                            },
-                            finalIntent === 'approve'
-                                ? {
-                                      label: t('Save and approve'),
-                                      detail: t(
-                                          'Use this when you encode the report yourself. It counts in the dashboard right away.',
-                                      ),
-                                  }
-                                : {
-                                      label: t('Submit for review'),
-                                      detail: t(
-                                          'Sends the report to the Admin. You cannot edit it unless it is returned.',
-                                      ),
-                                  },
-                            {
-                                label: t('Totals'),
-                                detail: t(
-                                    'Computed for you; the server checks them again when you save.',
-                                ),
-                            },
-                        ]}
-                    />
                 )}
 
                 {errors.report && (
                     <p
                         role="alert"
-                        className="rounded-lg border border-status-danger-border bg-status-danger-bg p-4 text-sm text-status-danger-fg"
+                        className="rounded-xl border border-status-danger-border bg-status-danger-bg p-4 text-sm text-status-danger-fg"
                     >
                         {errors.report}
                     </p>
                 )}
 
-                {/* One column on every screen: Sales, then Ridership, then Remarks. */}
-                <div className="grid grid-cols-1 gap-6">
-                    <SalesSection
-                        categories={categories}
-                        values={sales}
-                        errors={errors}
-                        onChange={(key, value) =>
-                            setSales((current) => ({
-                                ...current,
-                                [key]: value,
-                            }))
-                        }
-                    />
-                    <RidershipSection
-                        rows={ridership}
-                        errors={errors}
-                        onChange={(index, field, value) =>
-                            setRidership((current) =>
-                                current.map((row, position) =>
-                                    position === index
-                                        ? { ...row, [field]: value }
-                                        : row,
-                                ),
-                            )
-                        }
-                    />
-                    <FormSection
-                        title={t('Remarks')}
-                        description={t(
-                            'Anything else management should know about this week. Record problems that need follow-up as issues below.',
-                        )}
-                    >
-                        <FormField
-                            id="remarks"
-                            label={t('Remarks')}
-                            error={errors.remarks}
+                <div className="grid grid-cols-1 items-start gap-6 xl:grid-cols-12">
+                    <div className="grid grid-cols-1 gap-6 xl:col-span-8">
+                        <SalesSection
+                            categories={categories}
+                            values={sales}
+                            errors={errors}
+                            onChange={(key, value) =>
+                                setSales((current) => ({
+                                    ...current,
+                                    [key]: value,
+                                }))
+                            }
+                        />
+                        <RidershipSection
+                            rows={ridership}
+                            errors={errors}
+                            onChange={(index, field, value) =>
+                                setRidership((current) =>
+                                    current.map((row, position) =>
+                                        position === index
+                                            ? { ...row, [field]: value }
+                                            : row,
+                                    ),
+                                )
+                            }
+                        />
+                        <FormSection
+                            title={t('Remarks')}
+                            description={t(
+                                'Anything else management should know about this week. Record problems that need follow-up as issues below.',
+                            )}
                         >
-                            <Textarea
-                                {...fieldAria('remarks', {
-                                    error: errors.remarks,
-                                })}
-                                rows={3}
-                                maxLength={2000}
-                                value={remarks}
-                                onChange={(event) =>
-                                    setRemarks(event.target.value)
-                                }
-                            />
-                        </FormField>
-                    </FormSection>
-                </div>
+                            <FormField
+                                id="remarks"
+                                label={t('Remarks')}
+                                error={errors.remarks}
+                            >
+                                <Textarea
+                                    {...fieldAria('remarks', {
+                                        error: errors.remarks,
+                                    })}
+                                    rows={3}
+                                    maxLength={2000}
+                                    value={remarks}
+                                    onChange={(event) =>
+                                        setRemarks(event.target.value)
+                                    }
+                                />
+                            </FormField>
+                        </FormSection>
+                    </div>
 
-                <WeekComparison
-                    comparison={{ ...report.comparison }}
-                    currentTotal={salesTotal(sales)}
-                />
+                    <aside className="grid grid-cols-1 gap-6 xl:sticky xl:top-6 xl:col-span-4">
+                        <section
+                            className="rounded-xl border border-t-[3px] border-t-primary bg-card p-5"
+                            aria-label={t('Totals')}
+                        >
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="rounded-lg border bg-muted/35 p-3">
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('Total sales')}
+                                    </p>
+                                    <p
+                                        className="mt-1 text-lg font-bold tabular-nums"
+                                        aria-live="polite"
+                                    >
+                                        {formatPeso(salesTotal(sales))}
+                                    </p>
+                                </div>
+                                <div className="rounded-lg border bg-muted/35 p-3">
+                                    <p className="text-xs text-muted-foreground">
+                                        {t('Total ridership')}
+                                    </p>
+                                    <p
+                                        className="mt-1 text-lg font-bold tabular-nums"
+                                        aria-live="polite"
+                                    >
+                                        {formatCount(totalRidership)}
+                                    </p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <WeekComparison
+                            comparison={{ ...report.comparison }}
+                            currentTotal={salesTotal(sales)}
+                            compact
+                        />
+
+                        {!returnNote && (
+                            <RequirementGuide
+                                title={t('How to fill in this report')}
+                                summary={t(
+                                    "Encode the week's sales and ridership. Your work is kept when you save a draft.",
+                                )}
+                                items={[
+                                    {
+                                        label: t('Save draft'),
+                                        detail: t(
+                                            'Keeps your figures so you can finish later.',
+                                        ),
+                                    },
+                                    finalIntent === 'approve'
+                                        ? {
+                                              label: t('Save and approve'),
+                                              detail: t(
+                                                  'Use this when you encode the report yourself. It counts in the dashboard right away.',
+                                              ),
+                                          }
+                                        : {
+                                              label: t('Submit for review'),
+                                              detail: t(
+                                                  'Sends the report to the Admin. You cannot edit it unless it is returned.',
+                                              ),
+                                          },
+                                    {
+                                        label: t('Totals'),
+                                        detail: t(
+                                            'Computed for you; the server checks them again when you save.',
+                                        ),
+                                    },
+                                ]}
+                            />
+                        )}
+                    </aside>
+                </div>
 
                 {/* The single place for this terminal's issues, as in the management prototype. */}
                 <TerminalIssues
@@ -370,28 +408,38 @@ export default function ReportEdit({
             {/* Totals and actions stay within thumb reach while scrolling on a phone. */}
             <FixedActionBar>
                 <div className="flex flex-wrap items-center justify-between gap-3">
-                    <p className="text-sm">
-                        <span className="text-muted-foreground">
-                            {t('Total')}
+                    <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm">
+                        <span>
+                            <span className="text-muted-foreground">
+                                {t('Total')}{' '}
+                            </span>
+                            <span className="font-semibold tabular-nums">
+                                {formatPeso(salesTotal(sales))}
+                            </span>
                         </span>
-                        <span className="font-semibold tabular-nums">
-                            {formatPeso(salesTotal(sales))}
-                        </span>
-                        <span className="text-muted-foreground"> · </span>
-                        <span className="font-semibold tabular-nums">
-                            {formatCount(totalRidership)}
-                        </span>
-                        <span className="text-muted-foreground">
-                            {' '}
-                            {t('riders')}
+                        <span className="text-muted-foreground">·</span>
+                        <span>
+                            <span className="font-semibold tabular-nums">
+                                {formatCount(totalRidership)}
+                            </span>{' '}
+                            <span className="text-muted-foreground">
+                                {t('riders')}
+                            </span>
                         </span>
                         {localSavedAt && (
-                            <span className="ml-2 text-xs text-muted-foreground">
-                                {t('· Local draft saved at')}
+                            <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-0.5 text-xs text-muted-foreground">
+                                <span
+                                    aria-hidden="true"
+                                    className="size-1.5 rounded-full bg-emerald-500"
+                                />
+                                {t('· Local draft saved at').replace(
+                                    /^·\s*/,
+                                    '',
+                                )}{' '}
                                 {localSavedAt}
                             </span>
                         )}
-                    </p>
+                    </div>
                     <div className="flex flex-1 justify-end gap-2 sm:flex-none">
                         <Button
                             type="button"
@@ -425,12 +473,10 @@ export default function ReportEdit({
                                 : t('Submit this report?')}
                         </DialogTitle>
                         <DialogDescription>
-                            {t('Total sales')}
-                            {formatPeso(salesTotal(sales))} {t('and ridership')}
-                            {formatCount(totalRidership)} {t('for')}{' '}
-                            {report.terminal.name}
-                            {t(', week of')}
-                            {t(report.week.label)}.{' '}
+                            {t('Total sales')} {formatPeso(salesTotal(sales))}{' '}
+                            {t('and ridership')} {formatCount(totalRidership)}{' '}
+                            {t('for')} {report.terminal.name}
+                            {t(', week of')} {t(report.week.label)}.{' '}
                             {finalIntent === 'approve'
                                 ? t(
                                       'It will count in the dashboard totals right away. You can reopen it later if a correction is needed.',

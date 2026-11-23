@@ -1,16 +1,14 @@
 import { t, useLocale } from '@/lib/i18n';
-import { Form, Head, usePage } from '@inertiajs/react';
-import { Link } from '@inertiajs/react';
+import { Form, Head, Link, usePage } from '@inertiajs/react';
 import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import Heading from '@/components/heading';
 import InputError from '@/components/input-error';
-import { RequirementGuide } from '@/components/requirement-guide';
+import { Panel } from '@/components/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/profile';
-import type { Auth } from '@/types';
 import { send } from '@/routes/verification';
+import type { Auth } from '@/types';
 
 type PageProps = {
     auth: Auth;
@@ -29,98 +27,65 @@ export default function Profile({
     return (
         <>
             <Head title={t('Profile settings')} />
-
             <h1 className="sr-only">{t('Profile settings')}</h1>
 
-            <div className="space-y-6">
-                <Heading
-                    variant="small"
-                    title={t('Profile')}
-                    description={t('Update your name and email address')}
-                />
-
-                <RequirementGuide
-                    title={t('Profile settings guide')}
-                    summary={t(
-                        'Your name and email identify you on reports, reviews and the audit trail.',
-                    )}
-                    items={[
-                        {
-                            label: t('Display name'),
-                            detail: t(
-                                'Shown on the reports you encode or review and recorded in the audit trail.',
-                            ),
-                        },
-                        {
-                            label: t('Sign-in email'),
-                            detail: t(
-                                'Used to sign in. Changing it requires confirming the new address.',
-                            ),
-                        },
-                    ]}
-                />
-
+            <Panel
+                title={t('Profile')}
+                description={t('Update your name and email address')}
+            >
                 <Form
                     {...ProfileController.update.form()}
                     options={{
                         preserveScroll: true,
                     }}
-                    className="space-y-6"
+                    className="space-y-5"
                 >
                     {({ processing, errors }) => (
                         <>
-                            <div className="grid gap-2">
-                                <Label htmlFor="name">{t('Name')}</Label>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                <div className="grid gap-2">
+                                    <Label htmlFor="name">{t('Name')}</Label>
+                                    <Input
+                                        id="name"
+                                        className="block w-full"
+                                        defaultValue={auth.user.name}
+                                        name="name"
+                                        required
+                                        autoComplete="name"
+                                        placeholder={t('Full name')}
+                                    />
+                                    <InputError message={errors.name} />
+                                </div>
 
-                                <Input
-                                    id="name"
-                                    className="mt-1 block w-full"
-                                    defaultValue={auth.user.name}
-                                    name="name"
-                                    required
-                                    autoComplete="name"
-                                    placeholder={t('Full name')}
-                                />
-
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.name}
-                                />
-                            </div>
-
-                            <div className="grid gap-2">
-                                <Label htmlFor="email">
-                                    {t('Email address')}
-                                </Label>
-
-                                <Input
-                                    id="email"
-                                    type="email"
-                                    className="mt-1 block w-full"
-                                    defaultValue={auth.user.email}
-                                    name="email"
-                                    required
-                                    autoComplete="username"
-                                    placeholder={t('Email address')}
-                                />
-
-                                <InputError
-                                    className="mt-2"
-                                    message={errors.email}
-                                />
+                                <div className="grid gap-2">
+                                    <Label htmlFor="email">
+                                        {t('Email address')}
+                                    </Label>
+                                    <Input
+                                        id="email"
+                                        type="email"
+                                        className="block w-full"
+                                        defaultValue={auth.user.email}
+                                        name="email"
+                                        required
+                                        autoComplete="username"
+                                        placeholder={t('Email address')}
+                                    />
+                                    <InputError message={errors.email} />
+                                </div>
                             </div>
 
                             {mustVerifyEmail &&
                                 auth.user.email_verified_at === null && (
-                                    <div>
-                                        <p className="-mt-4 text-sm text-muted-foreground">
+                                    <div className="rounded-lg border bg-muted/20 p-3 text-sm text-muted-foreground">
+                                        <p>
                                             {t(
                                                 'Your email address is unverified.',
                                             )}{' '}
                                             <Link
                                                 href={send()}
                                                 as="button"
-                                                className="text-foreground underline decoration-neutral-300 underline-offset-4 transition-colors duration-300 ease-out hover:decoration-current! dark:decoration-neutral-500"
+                                                className="font-medium text-primary underline underline-offset-4"
                                             >
                                                 {t(
                                                     'Click here to re-send the verification email.',
@@ -139,7 +104,7 @@ export default function Profile({
                                     </div>
                                 )}
 
-                            <div className="flex items-center justify-end gap-4">
+                            <div className="flex items-center justify-end border-t pt-4">
                                 <Button
                                     disabled={processing}
                                     data-test="update-profile-button"
@@ -150,7 +115,7 @@ export default function Profile({
                         </>
                     )}
                 </Form>
-            </div>
+            </Panel>
         </>
     );
 }

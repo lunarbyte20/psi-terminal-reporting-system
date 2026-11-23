@@ -25,7 +25,7 @@ export function RidershipChart({
 
     return (
         <ul className="space-y-2.5">
-            {rows.map((row) => {
+            {rows.map((row, index) => {
                 const share = (row.ridership / total) * 100;
 
                 return (
@@ -44,9 +44,10 @@ export function RidershipChart({
                             aria-hidden="true"
                         >
                             <div
-                                className="h-2 rounded-full bg-primary print:bg-black"
+                                className="chart-bar-x h-2 rounded-full bg-primary print:bg-black"
                                 style={{
                                     width: `${(row.ridership / largest) * 100}%`,
+                                    animationDelay: `${index * 45}ms`,
                                 }}
                             />
                         </div>

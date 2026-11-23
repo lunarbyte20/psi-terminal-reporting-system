@@ -3,11 +3,13 @@
 namespace App\Modules\Reporting\Actions;
 
 use App\Models\User;
+use App\Modules\Accounts\Actions\NotifyAdmins;
 use App\Modules\Reporting\Data\WeeklyReportInput;
 use App\Modules\Reporting\Enums\ReportStatus;
 use App\Modules\Reporting\Enums\SalesCategory;
 use App\Modules\Reporting\Enums\SaveIntent;
 use App\Modules\Reporting\Models\WeeklyReport;
+use App\Modules\Reporting\Notifications\SupervisorActivityNotification;
 use App\Modules\Reporting\Support\Money;
 use App\Modules\Terminals\Models\VehicleType;
 use App\Support\Audit\RecordChange;
@@ -26,6 +28,7 @@ class SaveWeeklyReport
     public function __construct(
         private readonly RecordReportTransition $transition,
         private readonly RecordChange $audit,
+        private readonly NotifyAdmins $notifyAdmins,
     ) {}
 
     public function execute(User $actor, WeeklyReport $report, WeeklyReportInput $input, SaveIntent $intent): WeeklyReport
@@ -56,6 +59,21 @@ class SaveWeeklyReport
             if ($report->status !== $from) {
                 $this->transition->execute($actor, $report, $from, $report->status);
             }
+
+            $report->loadMissing(['terminal:id,name', 'reportingWeek:id,starts_on,ends_on']);
+            $submitted = $report->status === ReportStatus::Submitted;
+            $terminalName = $report->terminal->name;
+            $weekLabel = $report->reportingWeek->label();
+            $this->notifyAdmins->execute(
+                $actor,
+                new SupervisorActivityNotification(
+                    $submitted ? 'Weekly report submitted: :terminal' : 'Weekly report updated: :terminal',
+                    ['terminal' => $terminalName],
+                    $submitted ? ':supervisor submitted the report for :terminal (:week).' : ':supervisor updated the draft report for :terminal (:week).',
+                    ['supervisor' => $actor->name, 'terminal' => $terminalName, 'week' => $weekLabel],
+                    '/reports/'.$report->id,
+                ),
+            );
 
             return $report;
         });

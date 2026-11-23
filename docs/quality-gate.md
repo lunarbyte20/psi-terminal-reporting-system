@@ -4,14 +4,29 @@ Use this gate for every change, whether it comes from a person or an agent. Scal
 
 Before handoff, use the pull request template, or report the same evidence when working without a pull request:
 
+## Project-specific commands and thresholds (`apps/server`)
+
+Run these from `apps/server/` before calling a change ready (or run `composer ci:check` to execute the full suite):
+
+| Check | Command | Threshold / Pass Criteria |
+| --- | --- | --- |
+| Full CI gate | `composer ci:check` | Exit code `0` across all frontend and backend checks |
+| Frontend lint & format | `npm run check` (or `npm run check:fix`) | `0` errors and `0` warnings across all JS/TS/TSX files |
+| TypeScript types | `npm run types:check` (`tsc --noEmit`) | `0` type errors |
+| Translation coverage | `npm run test:i18n` | `4/4` tests pass; `0` missing `t(...)` keys and `resources/js/locales/fil.json` identical to `lang/fil.json` |
+| Production bundle | `npm run build` (`vp build`) | Exits `0` with generated Wayfinder types |
+| PHP formatting | `composer lint:check` (`pint --parallel --test`) | `0` style violations |
+| Static analysis | `composer types:check` (`phpstan analyse`) | `0` Larastan errors |
+| Automated tests | `php artisan test` (and `php artisan test tests/Arch/RouteProtectionTest.php`) | `100%` pass on MariaDB; `0` skipped or weakened assertions; new/fixed workflows include normal, unauthorized, and recovery/retry coverage |
+
 | Area | Evidence to provide when applicable |
 | --- | --- |
-| Automated checks | Commands and results. Run `composer ci:check` in `apps/server`. A docs-only change normally needs a diff and consistency review. |
-| UI and accessibility | Screen and workflow reviewed in the running app, viewport or device used, and whether the main task and recovery worked. Check phone width (375px) and keyboard use, readable contrast, visible focus, and labels. For changed list navigation, test browser Back and the app's Back link with filters and paging, including the fallback when the original row is gone. Use the checklist in [UI guidelines](ui-guidelines.md). |
-| Security and access | What stops an unauthorised role, or a supervisor outside their terminals, from reading or changing records. Cover those boundaries with tests when the change affects them. |
-| Performance and growth | For changed lists, uploads, reports, or jobs, explain what keeps the work bounded and how it was checked. Use representative data and query plans or measurements where scale affects the result. |
-| Reliability and deployment | For retries, jobs, schema or API changes, and data writes, state how failures recover, how duplicates are prevented where relevant, and any migration or rollout steps. |
-| Maintainability | Check that responsibilities are clear and shared components or helpers are reused where they fit. If a screen starts owning unrelated workflows, split along those workflow boundaries before adding more. |
+| Automated checks | Exact commands run and observed counts/results (never extrapolate). A docs-only change normally needs a diff and consistency review. |
+| UI and accessibility | Screen and workflow reviewed in the running app, viewport or device used (verify phone `375px` and desktop `>= 1280px`), keyboard use, readable contrast, visible focus, and labels. For changed list navigation, test browser Back and the app's Back link with filters and paging, including the fallback when the original row is gone. Use [UI guidelines](ui-guidelines.md). |
+| Security and access | What stops an unauthorised role, or a supervisor outside their terminals, from reading or changing records (fail-closed checks). Cover those boundaries with tests and verify `RouteProtectionTest.php` passes. |
+| Performance and growth | For changed lists, uploads, exports, or jobs, confirm bounded queries (pagination/limits), eager loading, and indexed filter/sort columns. Do not claim scalability is proven without representative data or query measurements. |
+| Reliability and deployment | For retries, jobs, schema or API changes, and data writes, state how failures recover, how duplicates are prevented (`lockForUpdate()`, transactions, idempotency), and any migration or rollout steps. |
+| Maintainability | Confirm clean feature/layer separation, no duplicate logic, no unrelated diff noise or secrets, and updated `docs/product.md`, `docs/architecture.md`, or `docs/decisions/` when rules or boundaries changed. |
 
 Use **Not applicable** with a short reason for unrelated areas. If a required check couldn't run, name it, explain why, and say what remains to verify. Do not mark an unverified workflow as complete.
 

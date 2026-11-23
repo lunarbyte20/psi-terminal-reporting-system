@@ -106,7 +106,7 @@ class ExecutiveDashboardTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('ridership/index')
                 ->where('summary.vehicle_types.0', ['name' => 'BUS', 'ridership' => 300, 'trips' => 15])
-                ->where('summary.terminals', [['name' => 'SM Tarlac', 'ridership' => 300, 'trips' => 15]])
+                ->where('summary.terminals', [['id' => $tarlac->id, 'name' => 'SM Tarlac', 'ridership' => 300, 'trips' => 15]])
                 ->where('summary.supervisors.0.name', 'Edith Beltran')
                 // Only the two October weeks this test created exist; drafts are not counted.
                 ->where('summary.weeks', fn ($weeks) => collect($weeks)->pluck('ridership')->all() === [200, 100]));

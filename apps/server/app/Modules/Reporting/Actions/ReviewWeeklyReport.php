@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Reporting\Enums\ReportStatus;
 use App\Modules\Reporting\Enums\ReviewDecision;
 use App\Modules\Reporting\Models\WeeklyReport;
+use App\Modules\Reporting\Notifications\WeeklyReportReturnedNotification;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -40,5 +41,15 @@ class ReviewWeeklyReport
             $report->save();
             $this->transition->execute($actor, $report, $decision->fromStatus(), $decision->toStatus(), $approved ? null : $reason);
         });
+
+        if ($decision->requiresReason() && $reason !== null) {
+            $report->loadMissing(['terminal.supervisor.user', 'supervisor.user', 'reportingWeek']);
+            $supervisor = $report->terminal->supervisor ?? $report->supervisor;
+            $recipient = $supervisor?->archived_at === null ? $supervisor?->user : null;
+
+            if ($recipient !== null && $recipient->isActive() && $recipient->id !== $actor->id) {
+                $recipient->notify(new WeeklyReportReturnedNotification($report, $reason));
+            }
+        }
     }
 }

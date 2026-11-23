@@ -45,6 +45,11 @@ class WeeklyReportPolicy
         return $user->hasRoleOf(Role::Admin) && $report->status === ReportStatus::Approved;
     }
 
+    public function requestReopen(User $user, WeeklyReport $report): bool
+    {
+        return $report->status === ReportStatus::Approved && $this->isAssignedSupervisor($user, $report->terminal);
+    }
+
     /** Starting a report for a terminal and week is allowed for its supervisor and the Admin. */
     public function start(User $user, Terminal $terminal): bool
     {

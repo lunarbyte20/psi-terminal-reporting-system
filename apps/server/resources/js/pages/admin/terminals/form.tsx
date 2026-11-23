@@ -45,7 +45,7 @@ export default function TerminalFormPage({
     return (
         <>
             <Head title={t(title)} />
-            <main className="grid w-full grid-cols-1 gap-6 p-4 pb-32 sm:p-6 sm:pb-32">
+            <main className="grid w-full grid-cols-1 gap-6 p-4 pb-32 sm:p-6 sm:pb-32 lg:px-[3.5%] lg:py-8 lg:pb-32">
                 <Heading
                     title={t(title)}
                     description={t(
@@ -65,7 +65,7 @@ export default function TerminalFormPage({
                             : '/admin/terminals'
                     }
                     method={terminal ? 'put' : 'post'}
-                    className="max-w-3xl space-y-5"
+                    className="w-full space-y-5"
                     disableWhileProcessing
                 >
                     {({ errors, processing }) => (
@@ -79,81 +79,89 @@ export default function TerminalFormPage({
                             )}
                             <RequiredLegend />
                             <FormSection title={t('Terminal details')}>
-                                <FormField
-                                    id="name"
-                                    label={t('Terminal name')}
-                                    required
-                                    error={errors.name}
-                                >
-                                    <Input
-                                        {...fieldAria('name', {
-                                            required: true,
-                                            error: errors.name,
-                                        })}
-                                        name="name"
-                                        defaultValue={terminal?.name}
-                                        maxLength={120}
-                                        autoFocus={!terminal}
-                                    />
-                                </FormField>
-                                <FormField
-                                    id="location"
-                                    label={t('Location')}
-                                    hint={t(
-                                        'For example the city or province.',
-                                    )}
-                                    error={errors.location}
-                                >
-                                    <Input
-                                        {...fieldAria('location', {
-                                            hint: true,
-                                            error: errors.location,
-                                        })}
-                                        name="location"
-                                        defaultValue={terminal?.location ?? ''}
-                                        maxLength={160}
-                                    />
-                                </FormField>
-                                <FormField
-                                    id="supervisor_id"
-                                    label={t('Supervisor')}
-                                    hint={t(
-                                        "The supervisor who encodes this terminal's weekly report. Past reports keep their original supervisor.",
-                                    )}
-                                    error={errors.supervisor_id}
-                                >
-                                    <SearchableSelect
+                                <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                                    <FormField
+                                        id="name"
+                                        label={t('Terminal name')}
+                                        required
+                                        error={errors.name}
+                                    >
+                                        <Input
+                                            {...fieldAria('name', {
+                                                required: true,
+                                                error: errors.name,
+                                            })}
+                                            name="name"
+                                            defaultValue={terminal?.name}
+                                            maxLength={120}
+                                            autoFocus={!terminal}
+                                        />
+                                    </FormField>
+                                    <FormField
+                                        id="location"
+                                        label={t('Location')}
+                                        hint={t(
+                                            'For example the city or province.',
+                                        )}
+                                        error={errors.location}
+                                    >
+                                        <Input
+                                            {...fieldAria('location', {
+                                                hint: true,
+                                                error: errors.location,
+                                            })}
+                                            name="location"
+                                            defaultValue={
+                                                terminal?.location ?? ''
+                                            }
+                                            maxLength={160}
+                                        />
+                                    </FormField>
+                                    <FormField
                                         id="supervisor_id"
-                                        value={supervisorId}
-                                        onChange={setSupervisorId}
-                                        options={[
-                                            {
-                                                value: UNASSIGNED,
-                                                label: t('Not assigned yet'),
-                                            },
-                                            ...supervisors.map(
-                                                (supervisor) => ({
-                                                    value: String(
-                                                        supervisor.id,
+                                        label={t('Supervisor')}
+                                        hint={t(
+                                            "The supervisor who encodes this terminal's weekly report. Past reports keep their original supervisor.",
+                                        )}
+                                        error={errors.supervisor_id}
+                                    >
+                                        <SearchableSelect
+                                            id="supervisor_id"
+                                            value={supervisorId}
+                                            onChange={setSupervisorId}
+                                            options={[
+                                                {
+                                                    value: UNASSIGNED,
+                                                    label: t(
+                                                        'Not assigned yet',
                                                     ),
-                                                    label: supervisor.name,
-                                                }),
-                                            ),
-                                        ]}
-                                        searchPlaceholder="Search supervisors"
-                                        invalid={Boolean(errors.supervisor_id)}
-                                        describedBy="supervisor_id-hint"
-                                    />
-                                    <input
-                                        type="hidden"
-                                        name="supervisor_id"
-                                        value={
-                                            supervisorId === UNASSIGNED
-                                                ? ''
-                                                : supervisorId
-                                        }
-                                    />
-                                </FormField>
+                                                },
+                                                ...supervisors.map(
+                                                    (supervisor) => ({
+                                                        value: String(
+                                                            supervisor.id,
+                                                        ),
+                                                        label: supervisor.name,
+                                                    }),
+                                                ),
+                                            ]}
+                                            searchPlaceholder="Search supervisors"
+                                            invalid={Boolean(
+                                                errors.supervisor_id,
+                                            )}
+                                            describedBy="supervisor_id-hint"
+                                        />
+                                        <input
+                                            type="hidden"
+                                            name="supervisor_id"
+                                            value={
+                                                supervisorId === UNASSIGNED
+                                                    ? ''
+                                                    : supervisorId
+                                            }
+                                        />
+                                    </FormField>
+                                </div>
                             </FormSection>
                             <FormActions
                                 fixed
