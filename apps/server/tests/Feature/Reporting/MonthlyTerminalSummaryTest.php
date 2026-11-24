@@ -4,7 +4,6 @@ namespace Tests\Feature\Reporting;
 
 use App\Modules\Accounts\Enums\Role;
 use App\Modules\Reporting\Enums\ReportStatus;
-use App\Modules\Reporting\Models\RidershipLine;
 use App\Modules\Reporting\Models\WeeklyReport;
 use App\Modules\Terminals\Models\Supervisor;
 use App\Modules\Terminals\Models\VehicleType;

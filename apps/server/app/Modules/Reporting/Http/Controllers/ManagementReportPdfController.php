@@ -3,10 +3,7 @@
 namespace App\Modules\Reporting\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Evaluations\Enums\EvaluationSection;
-use App\Modules\Evaluations\Models\ManagementEvaluation;
-use App\Modules\Issues\Actions\GetIssueSnapshot;
-use App\Modules\Reporting\Actions\GetExecutiveDashboard;
+use App\Modules\Reporting\Actions\BuildManagementReport;
 use App\Modules\Reporting\Actions\RenderHtmlToPdf;
 use App\Modules\Reporting\Actions\ResolveReportPeriod;
 use Illuminate\Http\Request;
@@ -25,57 +22,25 @@ class ManagementReportPdfController extends Controller
         Request $request,
         string $period,
         ResolveReportPeriod $resolve,
-        GetExecutiveDashboard $dashboard,
-        GetIssueSnapshot $issues,
+        BuildManagementReport $report,
         RenderHtmlToPdf $renderer,
     ): BinaryFileResponse|Response {
         Gate::authorize('view-all-terminals');
-        $resolved = $resolve->execute($period);
-        $labels = $resolved->weeks->mapWithKeys(fn ($week) => [$week->id => $week->label()]);
-        $order = $resolved->weeks->pluck('id')->flip();
-
-        $evaluations = ManagementEvaluation::query()
-            ->with(['preparer:id,name', 'editor:id,name'])
-            ->whereIn('reporting_week_id', $resolved->weeks->pluck('id'))
-            ->get()
-            ->sortBy(fn (ManagementEvaluation $evaluation) => $order[$evaluation->reporting_week_id] ?? 0)
-            ->map(fn (ManagementEvaluation $evaluation) => [
-                'week' => $labels[$evaluation->reporting_week_id] ?? '',
-                'key_concerns' => $evaluation->key_concerns,
-                'evaluation' => $evaluation->evaluation,
-                'recommendations' => $evaluation->recommendations,
-                'sections' => $evaluation->sections ?? [],
-                'prepared_by' => $evaluation->preparer->name,
-                'updated_by' => $evaluation->editor?->name,
-                'updated_at' => $evaluation->updated_at->toIso8601String(),
-            ])
-            ->values()
-            ->all();
 
         $logoPath = public_path('images/psi-logo.png');
-        $logoDataUri = is_file($logoPath)
-            ? 'data:image/png;base64,'.base64_encode((string) file_get_contents($logoPath))
-            : null;
-
         $viewData = [
-            'period' => $resolved->toArray(),
-            'dashboard' => $dashboard->executeForPeriod($request->user(), $resolved),
-            'issues' => $issues->execute($request->user()),
-            'evaluations' => $evaluations,
-            'sectionOptions' => EvaluationSection::options(),
+            ...$report->execute($request->user(), $resolve->execute($period)),
             'generatedAt' => now()->setTimezone((string) config('app.display_timezone'))->format('M j, Y, H:i'),
-            'logoDataUri' => $logoDataUri,
+            'logoDataUri' => is_file($logoPath)
+                ? 'data:image/png;base64,'.base64_encode((string) file_get_contents($logoPath))
+                : null,
         ];
 
         if (! $renderer->hasBrowserBinary()) {
-            return response()->view('reports.management-report-pdf', [
-                ...$viewData,
-                'printFallback' => true,
-            ]);
+            return response()->view('reports.management-report-pdf', [...$viewData, 'printFallback' => true]);
         }
 
-        $html = view('reports.management-report-pdf', $viewData)->render();
-        $pdfPath = $renderer->execute($html);
+        $pdfPath = $renderer->execute(view('reports.management-report-pdf', $viewData)->render());
 
         return response()
             ->file($pdfPath, [

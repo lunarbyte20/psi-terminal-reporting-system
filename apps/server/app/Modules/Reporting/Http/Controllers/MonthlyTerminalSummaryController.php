@@ -31,7 +31,7 @@ class MonthlyTerminalSummaryController extends Controller
 
         $terminals = Terminal::query()
             ->active()
-            ->when($isSupervisor, fn ($query) => $query->where('supervisor_id', $user->supervisor?->id ?? 0))
+            ->when($isSupervisor, fn ($query) => $query->where('supervisor_id', $user->supervisor->id ?? 0))
             ->orderBy('name')
             ->get(['id', 'name', 'location', 'supervisor_id']);
 

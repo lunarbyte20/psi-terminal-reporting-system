@@ -190,8 +190,11 @@
 }
 
 @media print {
+    /* Each printed sheet carries its own 0.5 in margin as padding (the report page sets @page margin 0 to hide the browser header), so every page, not only the first, has a top margin. 12.99 in instead of 13 avoids a stray blank page from rounding. */
     .management-report-page {
-        height: 12in;
+        box-sizing: border-box;
+        height: 12.99in;
+        padding: 0.5in;
         overflow: hidden;
         break-after: page;
         page-break-after: always;

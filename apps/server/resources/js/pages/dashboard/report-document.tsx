@@ -147,20 +147,23 @@ export function DocTable({
     );
 }
 
-/** Signature lines at the end of the printed report. */
+/** Signature lines at the end of the printed report: label, line, name and title. */
 export function SignatureBlock({
     signers,
 }: {
-    signers: { role: string; name: string | null }[];
+    signers: { role: string; name: string; title: string }[];
 }) {
     useLocale();
     return (
         <div className="grid break-inside-avoid grid-cols-2 gap-10 pt-8">
             {signers.map((signer) => (
                 <div key={signer.role} className="text-[11px]">
-                    <p className="text-neutral-600">{signer.role}:</p>
+                    <p className="text-neutral-600">{t(signer.role)}</p>
                     <div className="mt-8 border-b border-neutral-800" />
-                    <p className="mt-1 font-semibold">{signer.name ?? ' '}</p>
+                    <p className="mt-1 font-semibold uppercase">
+                        {signer.name}
+                    </p>
+                    <p className="text-neutral-600">{signer.title}</p>
                 </div>
             ))}
         </div>

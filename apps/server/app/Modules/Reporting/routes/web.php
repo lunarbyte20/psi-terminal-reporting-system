@@ -12,6 +12,7 @@ use App\Modules\Reporting\Http\Controllers\MonthlyTerminalSummaryController;
 use App\Modules\Reporting\Http\Controllers\ReportHistoryController;
 use App\Modules\Reporting\Http\Controllers\ReportingWeekController;
 use App\Modules\Reporting\Http\Controllers\ReportReviewController;
+use App\Modules\Reporting\Http\Controllers\ReportSettingsController;
 use App\Modules\Reporting\Http\Controllers\RequestReportReopenController;
 use App\Modules\Reporting\Http\Controllers\RidershipController;
 use App\Modules\Reporting\Http\Controllers\SendWeeklyReportRemindersController;
@@ -48,4 +49,9 @@ Route::prefix('reports')->name('reports.')->group(function (): void {
 Route::middleware('can:administer')->prefix('admin/reporting-weeks')->name('admin.reporting-weeks.')->group(function (): void {
     Route::get('/', [ReportingWeekController::class, 'index'])->name('index');
     Route::post('/', [ReportingWeekController::class, 'store'])->middleware('throttle:20,1')->name('store');
+});
+
+Route::middleware('can:administer')->prefix('admin/report-settings')->name('admin.report-settings.')->group(function (): void {
+    Route::get('/', [ReportSettingsController::class, 'edit'])->name('edit');
+    Route::put('/', [ReportSettingsController::class, 'update'])->middleware('throttle:20,1')->name('update');
 });

@@ -26,6 +26,7 @@
 ## 4. Management (CEO, General Manager, COO)
 
 - **Executive Dashboard**: View approved sales, variance, ridership, supervisor rankings, and terminal breakdowns by **Week** or **Month**.
-- **Exports & Printing**: Download the weekly terminal breakdown and ridership summary as **Excel (.xlsx)** or **CSV**, or open **Management report (PDF)** to print or save a two-column 8.5 × 13 in PDF report.
+- **Exports & Printing**: Download the terminal breakdown and ridership summary as **Excel (.xlsx)** or **CSV**, or open **Management report (PDF)** to print or save an 8.5 × 13 in PDF report. The PDF and the Excel **Management Summary** sheet both include the Top 3 highest/lowest sales and Top 3 increase/decrease lists, open issues (without tags), the evaluation as a *Management Matter | Evaluation / Recommendation* table, the issue **Status Summary**, and the signature block. Every printed page has a 0.45–0.5 in margin, including pages after the first.
+- **Report signatories** (Admin): *Administration → Report signatories* sets the "Prepared by" and "Submitted to" names and titles printed at the end of every report. Until saved, the names from the PSI summary workbook are used.
 - **Evaluation, History & Ridership**: Read weekly evaluations, browse past reports, and review monthly ridership consolidations.
 

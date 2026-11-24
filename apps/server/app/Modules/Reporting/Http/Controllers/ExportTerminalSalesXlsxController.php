@@ -3,8 +3,9 @@
 namespace App\Modules\Reporting\Http\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Reporting\Actions\GetExecutiveDashboard;
+use App\Modules\Reporting\Actions\BuildManagementReport;
 use App\Modules\Reporting\Actions\ResolveReportPeriod;
+use App\Modules\Reporting\Support\ManagementSummarySheet;
 use Illuminate\Http\Request;
 use OpenSpout\Common\Entity\Cell;
 use OpenSpout\Common\Entity\Row;
@@ -22,9 +23,10 @@ use OpenSpout\Writer\XLSX\Writer;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
- * Downloads a formatted Excel (.xlsx) workbook with three worksheets:
- * Terminal Breakdown, Supervisor Summary, and Ridership by Vehicle.
- * Figures come from GetExecutiveDashboard so the workbook matches the screen.
+ * Downloads a formatted Excel (.xlsx) workbook with four worksheets:
+ * Terminal Breakdown, Supervisor Summary, Ridership by Vehicle and the
+ * Management Summary (top 3 lists, issues, evaluation, signatories).
+ * Figures come from BuildManagementReport so the workbook matches the report.
  */
 class ExportTerminalSalesXlsxController extends Controller
 {
@@ -50,10 +52,11 @@ class ExportTerminalSalesXlsxController extends Controller
 
     private const INT_FMT = '#,##0';
 
-    public function __invoke(Request $request, string $period, ResolveReportPeriod $resolve, GetExecutiveDashboard $dashboard): BinaryFileResponse
+    public function __invoke(Request $request, string $period, ResolveReportPeriod $resolve, BuildManagementReport $build): BinaryFileResponse
     {
         $resolved = $resolve->execute($period);
-        $data = $dashboard->executeForPeriod($request->user(), $resolved);
+        $report = $build->execute($request->user(), $resolved);
+        $data = $report['dashboard'];
         $filename = 'psi-terminal-sales-'.$resolved->fileStamp.'.xlsx';
         $generated = 'Generated '.now()->setTimezone((string) config('app.display_timezone'))->format('M j, Y H:i');
 
@@ -69,6 +72,7 @@ class ExportTerminalSalesXlsxController extends Controller
         $this->writeTerminalSheet($writer, $data, $resolved->title, $resolved->isMonth(), $generated, $styles);
         $this->writeSupervisorSheet($writer, $data, $resolved->title, $resolved->isMonth(), $generated, $styles);
         $this->writeRidershipSheet($writer, $data, $resolved->title, $generated, $styles);
+        ManagementSummarySheet::write($writer, $report, $resolved->title, $generated, $styles);
 
         $writer->close();
 

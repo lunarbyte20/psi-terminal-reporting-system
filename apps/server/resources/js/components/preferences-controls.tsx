@@ -24,7 +24,13 @@ export function PreferencesControls() {
         if (auth.user?.theme)
             updateAppearance(auth.user.theme as 'light' | 'dark' | 'system');
         // Apply the persisted preference on a page visit, never remount the form.
-    }, [auth.user?.id, auth.user?.theme, isSupervisor, savedLocale, updateAppearance]);
+    }, [
+        auth.user?.id,
+        auth.user?.theme,
+        isSupervisor,
+        savedLocale,
+        updateAppearance,
+    ]);
 
     async function changeLanguage() {
         const next = locale === 'en' ? 'fil' : 'en';

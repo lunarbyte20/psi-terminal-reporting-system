@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <title>Executive Management Report — {{ $period['title'] }}</title>
     <style>
+        /* No page margin, so browsers have no room to print their URL/date header and footer. */
         @page { size: 8.5in 13in portrait; margin: 0; }
         * { box-sizing: border-box; }
         body {
@@ -12,8 +13,14 @@
             line-height: 1.38;
             color: #1e293b;
             margin: 0 auto;
-            padding: 0.4in 0.48in;
+            padding: 0;
             width: 8.5in;
+        }
+        /* The page margin instead: "clone" repeats this padding at the top and bottom of every printed page, not only the first. */
+        .sheet {
+            padding: 0.45in 0.48in;
+            box-decoration-break: clone;
+            -webkit-box-decoration-break: clone;
         }
         .header {
             display: flex;
@@ -74,15 +81,25 @@
 
         .compact-table th, .compact-table td { padding: 2.2px 5px; font-size: 8px; }
 
-        .eval-box { border: 1px solid #e2e8f0; border-left: 3px solid #1a1990; border-radius: 3px; padding: 8px 11px; margin-bottom: 8px; background: #ffffff; break-inside: avoid; }
-        .eval-box h3 { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin: 0 0 3px; color: #1e3a8a; }
-        .eval-box p, .eval-box li { margin: 0 0 3px; color: #334155; white-space: pre-line; }
-        .eval-box ol { margin: 2px 0 0; padding-left: 16px; }
 
-        .tag { display: inline-block; padding: 1px 5px; border-radius: 3px; font-size: 7.5px; background: #eef2ff; color: #1e3a8a; margin-right: 3px; }
-        .sigs { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 24px; break-inside: avoid; }
-        .sig-line { border-top: 1px solid #475569; padding-top: 4px; font-size: 9px; }
-        .sig-role { color: #64748b; font-size: 8px; }
+        /* Never leave a title alone at the bottom of a page: it moves to the next page with its content. */
+        .section-title, .source-note, .highlight-title { break-after: avoid; page-break-after: avoid; break-inside: avoid; }
+        /* Sections that fit on one page move as a whole, so the title can never be stranded above them. */
+        .keep-together { break-inside: avoid; page-break-inside: avoid; }
+        .highlights > div, .side-by-side, .trend-wrap, .sigs { break-inside: avoid; page-break-inside: avoid; }
+        thead { display: table-header-group; }
+        tr { break-inside: avoid; page-break-inside: avoid; }
+        .highlights { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 14px; break-inside: avoid; }
+        .highlight-title { font-size: 8.5px; font-weight: 700; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.03em; margin: 0 0 3px; }
+        .eval-layout { display: grid; grid-template-columns: 1fr 1.75in; gap: 12px; align-items: start; }
+        .eval-table td.matter { width: 30%; font-weight: 700; color: #0f172a; }
+        .eval-table td { white-space: pre-line; }
+        .eval-table ol { margin: 0; padding-left: 14px; }
+        .eval-week td { background: #eef2ff !important; font-weight: 700; color: #1a1990; }
+        .sigs { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 28px; break-inside: avoid; }
+        .sig-label { font-size: 8.5px; color: #64748b; margin-bottom: 26px; }
+        .sig-line { border-top: 1px solid #475569; padding-top: 4px; font-size: 9px; text-transform: uppercase; }
+        .sig-role { color: #64748b; font-size: 8px; text-transform: none; }
         .footer {
             margin-top: 14px;
             border-top: 1px solid #cbd5e1;
@@ -127,6 +144,7 @@
         <button type="button" class="print-toolbar-btn" onclick="window.print()">Print / Save as PDF</button>
     </div>
 @endif
+<div class="sheet">
 @php
     $palette = ['#1a1990', '#0f9b8e', '#d4a017', '#7c6fd6', '#e07a5f', '#2e9e5b', '#3b82f6', '#64748b'];
     $sales = $dashboard['totals']['sales'];
@@ -310,7 +328,7 @@
     @endif
 </section>
 
-<section class="section">
+<section class="section keep-together">
     <h2 class="section-title">Sales by Supervisor</h2>
     <p class="source-note"><strong>Source:</strong> Approved reports grouped by supervisor. Percentages reflect share of total approved sales.</p>
     @php
@@ -350,7 +368,7 @@
     </div>
 </section>
 
-<section class="section">
+<section class="section keep-together">
     <h2 class="section-title">Ridership by Vehicle Type</h2>
     <p class="source-note"><strong>Source:</strong> Passenger volume and trip counts from approved reports.</p>
     @php
@@ -383,21 +401,29 @@
 
 <section class="section">
     <h2 class="section-title">Terminal Sales Breakdown</h2>
-    <p class="source-note"><strong>Source:</strong> All terminals ordered by approved sales rank, followed by pending reports.</p>
+    <p class="source-note"><strong>Source:</strong> Terminals grouped by supervisor, highest approved sales first within each group.</p>
     <table class="compact-table">
         <thead>
             <tr>
-                <th>#</th><th>Terminal</th><th>Supervisor</th>
+                <th>Supervisor</th><th>Terminal</th>
                 <th class="num">{{ $currentLabel }}</th><th class="num">Previous</th>
                 <th class="num">Variance</th><th class="num">% chg</th><th>Status</th>
             </tr>
         </thead>
         <tbody>
-            @foreach ($terminals as $row)
+            @php
+                // Grouped by supervisor (as in the PSI workbook) so each name prints once; rank stays the sales rank.
+                $groups = collect($terminals)
+                    ->sortBy(fn ($r) => [$r['supervisor_id'] === null ? 1 : 0, $r['supervisor_id'] ?? 0, $r['rank'] ?? PHP_INT_MAX, $r['terminal']])
+                    ->groupBy(fn ($r) => $r['supervisor'] ?? 'Unassigned');
+            @endphp
+            @foreach ($groups as $supervisorName => $groupRows)
+            @foreach ($groupRows->values() as $i => $row)
                 <tr>
-                    <td>{{ $row['rank'] ?? '—' }}</td>
+                    @if ($i === 0)
+                        <td rowspan="{{ $groupRows->count() }}" style="font-weight:600; vertical-align:middle; background:#ffffff; border-right:1px solid #e2e8f0;">{{ $supervisorName }}</td>
+                    @endif
                     <td>{{ $row['terminal'] }}</td>
-                    <td>{{ $row['supervisor'] ?? 'Unassigned' }}</td>
                     <td class="num">{{ $peso($row['current']) }}</td>
                     <td class="num">{{ $peso($row['previous']) }}</td>
                     <td class="num">{{ $row['counted'] ? $peso($row['variance']) : '—' }}</td>
@@ -405,8 +431,9 @@
                     <td>{{ $statusLabels[$row['status'] ?? 'not_started'] ?? ($row['status'] ?? 'Not started') }}</td>
                 </tr>
             @endforeach
+            @endforeach
             <tr class="total-row">
-                <td></td><td>Total</td><td></td>
+                <td>Total</td><td></td>
                 <td class="num">{{ $peso($sales['current']) }}</td>
                 <td class="num">{{ $peso($sales['previous']) }}</td>
                 <td class="num">{{ $peso($sales['variance']) }}</td>
@@ -417,22 +444,61 @@
     </table>
 </section>
 
+@php
+    $highlights = [
+        ['title' => 'Top 3 Highest Sales', 'rows' => $dashboard['top_sales'] ?? [], 'value' => fn ($r) => $peso($r['current']), 'head' => $currentLabel, 'empty' => 'No approved reports yet.'],
+        ['title' => 'Top 3 Lowest Sales', 'rows' => $dashboard['lowest_sales'] ?? [], 'value' => fn ($r) => $peso($r['current']), 'head' => $currentLabel, 'empty' => 'No approved reports yet.'],
+        ['title' => 'Top 3 Increase', 'rows' => $dashboard['biggest_increases'] ?? [], 'value' => fn ($r) => $pct($r['percent_change']), 'head' => '% change', 'empty' => 'No terminal grew compared with the previous period.'],
+        ['title' => 'Top 3 Decrease', 'rows' => $dashboard['biggest_decreases'] ?? [], 'value' => fn ($r) => $pct($r['percent_change']), 'head' => '% change', 'empty' => 'No terminal dropped compared with the previous period.'],
+    ];
+@endphp
+<section class="section keep-together">
+    <h2 class="section-title">Sales Highlights</h2>
+    <p class="source-note"><strong>Source:</strong> Terminals with approved reports in both periods; change is against {{ $previousLabel }}.</p>
+    <div class="highlights">
+        @foreach ($highlights as $block)
+            @php
+                $top = array_slice($block['rows'], 0, 3);
+                $isChange = $block['head'] === '% change';
+                // Slices are sized by sales, or by the size of the % change (decreases use their absolute value).
+                $pieItems = array_map(fn ($r) => [
+                    'value' => abs((float) ($isChange ? $r['percent_change'] : $r['current'])),
+                    'display' => ($block['value'])($r),
+                ], $top);
+            @endphp
+            <div>
+                <p class="highlight-title">{{ $block['title'] }}</p>
+                @if ($top === [] || array_sum(array_column($pieItems, 'value')) <= 0)
+                    <p style="color:#64748b;font-size:8.5px;margin:6px 0;">{{ $block['empty'] }}</p>
+                @else
+                    {!! $renderPie($pieItems, $block['title']) !!}
+                    <table class="compact-table">
+                        <tbody>
+                            @foreach ($top as $i => $row)
+                                <tr>
+                                    <td><span class="swatch" style="background:{{ $palette[$i % count($palette)] }}"></span>{{ $row['terminal'] }}</td>
+                                    <td class="num {{ str_contains($block['title'], 'Increase') ? 'up' : (str_contains($block['title'], 'Decrease') ? 'down' : '') }}">{{ ($block['value'])($row) }}</td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                @endif
+            </div>
+        @endforeach
+    </div>
+</section>
+
 @if (count($issues['items'] ?? []) > 0)
-<section class="section">
+<section class="section keep-together">
     <h2 class="section-title">Open Operational Issues</h2>
     <table class="compact-table">
         <thead>
-            <tr><th>Issue</th><th>Tags</th><th>Terminal</th><th>Responsible</th><th>Status</th><th>Target date</th></tr>
+            <tr><th>Issue</th><th>Terminal</th><th>Responsible</th><th>Status</th><th>Target date</th></tr>
         </thead>
         <tbody>
             @foreach ($issues['items'] as $item)
                 <tr>
                     <td>{{ $item['key_issue'] }}{{ !empty($item['requires_ceo_decision']) ? ' (CEO decision)' : '' }}</td>
-                    <td>
-                        @foreach ($item['tags'] ?? [] as $tag)
-                            <span class="tag">{{ $tag['name'] }}</span>
-                        @endforeach
-                    </td>
                     <td>{{ $item['terminal'] ?? 'General' }}</td>
                     <td>{{ $item['responsible_person'] ?? '—' }}</td>
                     <td>{{ ($issueStatusLabels[$item['status']] ?? $item['status']).(!empty($item['overdue']) ? ', overdue' : '') }}</td>
@@ -446,46 +512,60 @@
 
 <section class="section">
     <h2 class="section-title">Management Evaluation &amp; Recommendations</h2>
-    @forelse ($evaluations as $ev)
-        <div class="eval-box">
-            @if ($isMonth && $ev['week'])
-                <div style="font-size:8.5px; font-weight:700; color:#1a1990; margin-bottom:4px;">Week of {{ $ev['week'] }}</div>
-            @endif
-            @if ($ev['key_concerns'])
-                <h3>Key Issues &amp; Concerns</h3>
-                <p>{{ $ev['key_concerns'] }}</p>
-            @endif
-            @if ($ev['evaluation'])
-                <h3 style="margin-top:5px;">Evaluation</h3>
-                <p>{{ $ev['evaluation'] }}</p>
-            @endif
-            @if (count($ev['recommendations']) > 0)
-                <h3 style="margin-top:5px;">Recommendations</h3>
-                <ol>
-                    @foreach ($ev['recommendations'] as $rec)
-                        <li>{{ $rec }}</li>
-                    @endforeach
-                </ol>
-            @endif
-            @foreach ($sectionOptions as $opt)
-                @if (!empty($ev['sections'][$opt['key']]))
-                    <h3 style="margin-top:5px;">{{ $opt['label'] }}</h3>
-                    <p>{{ $ev['sections'][$opt['key']] }}</p>
-                @endif
-            @endforeach
-        </div>
-    @empty
-        <p style="color:#64748b;font-size:8.5px;">No management evaluation has been recorded for this period yet.</p>
-    @endforelse
+    <div class="eval-layout">
+        <table class="compact-table eval-table">
+            <thead><tr><th>Management Matter</th><th>Evaluation / Recommendation</th></tr></thead>
+            <tbody>
+                @forelse ($evaluations as $ev)
+                    @if ($isMonth && $ev['week'])
+                        <tr class="eval-week"><td colspan="2">Week of {{ $ev['week'] }}</td></tr>
+                    @endif
+                    @forelse ($ev['rows'] as $row)
+                        <tr>
+                            <td class="matter">{{ $row['matter'] }}</td>
+                            <td>
+                                @if (count($row['items']) > 0)
+                                    <ol>@foreach ($row['items'] as $rec)<li>{{ $rec }}</li>@endforeach</ol>
+                                @else
+                                    {{ $row['text'] }}
+                                @endif
+                            </td>
+                        </tr>
+                    @empty
+                        <tr><td colspan="2" style="color:#64748b;">The evaluation for this week is empty.</td></tr>
+                    @endforelse
+                @empty
+                    <tr><td colspan="2" style="color:#64748b;">No management evaluation has been recorded for this period yet.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+
+        <table class="compact-table">
+            <thead><tr><th>Status Summary</th><th class="num">Count</th></tr></thead>
+            <tbody>
+                <tr><td>Pending</td><td class="num">{{ $statusSummary['pending'] }}</td></tr>
+                <tr><td>Ongoing</td><td class="num">{{ $statusSummary['ongoing'] }}</td></tr>
+                <tr><td>On hold</td><td class="num">{{ $statusSummary['on_hold'] }}</td></tr>
+                <tr><td>Completed this period</td><td class="num">{{ $statusSummary['completed'] }}</td></tr>
+                <tr class="total-row"><td>Total</td><td class="num">{{ $statusSummary['total'] }}</td></tr>
+            </tbody>
+        </table>
+    </div>
 
     <div class="sigs">
-        <div class="sig-line">
-            <div><strong>{{ $evaluations[0]['prepared_by'] ?? '________________________' }}</strong></div>
-            <div class="sig-role">Prepared by</div>
+        <div>
+            <div class="sig-label">Prepared by:</div>
+            <div class="sig-line">
+                <div><strong>{{ $signatories['prepared_by_name'] }}</strong></div>
+                <div class="sig-role">{{ $signatories['prepared_by_title'] }}</div>
+            </div>
         </div>
-        <div class="sig-line">
-            <div><strong>________________________</strong></div>
-            <div class="sig-role">Noted by · Chief Executive Officer</div>
+        <div>
+            <div class="sig-label">Submitted to:</div>
+            <div class="sig-line">
+                <div><strong>{{ $signatories['submitted_to_name'] }}</strong></div>
+                <div class="sig-role">{{ $signatories['submitted_to_title'] }}</div>
+            </div>
         </div>
     </div>
 </section>
@@ -494,10 +574,12 @@
     <span>Confidential — For executive management use only · Park Solutions Inc.</span>
     <span>{{ $period['title'] }}</span>
 </footer>
+</div>
 
 <script>
     (function () {
-        var maxTotalPx = 3 * 11.7 * 96;
+        // Three pages of content: each 13 in page minus the 0.9 in repeated top and bottom padding.
+        var maxTotalPx = 3 * 12.1 * 96;
         var h = document.body.scrollHeight;
         if (h > maxTotalPx) {
             document.body.style.zoom = String(Math.max(0.65, maxTotalPx / h));

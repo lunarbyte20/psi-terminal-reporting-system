@@ -63,7 +63,10 @@ export function ListFilters({
         >
             <div className="flex w-full items-end gap-1.5 sm:gap-2 md:w-auto md:min-w-48 md:flex-1">
                 <div className="min-w-0 flex-1 space-y-1.5">
-                    <Label htmlFor="list-search" className="sr-only md:not-sr-only">
+                    <Label
+                        htmlFor="list-search"
+                        className="sr-only md:not-sr-only"
+                    >
                         {searchLabel}
                     </Label>
                     <Input

@@ -20,8 +20,9 @@ export function IssueTags({
             : [];
 
     return (
+        // A block of its own with breathing room, so tags never crowd the issue text above or below.
         <span
-            className="inline-flex flex-wrap items-center gap-1"
+            className="flex flex-wrap items-center gap-1.5 pt-1.5 pb-1"
             aria-label={t('Issue tags')}
         >
             {visible.map((tag) => {
@@ -49,7 +50,7 @@ export function IssueTags({
                             printColorAdjust: 'exact',
                             WebkitPrintColorAdjust: 'exact',
                         }}
-                        className="inline-flex items-center rounded border border-black/15 px-2 py-0.5 text-xs font-semibold"
+                        className="inline-flex items-center rounded-sm border border-black/10 px-1.5 py-px text-[10px] leading-4 font-medium"
                     >
                         {tag.name}
                     </span>
@@ -58,7 +59,7 @@ export function IssueTags({
             {hidden.length > 0 && (
                 <span
                     title={hidden.map((tag) => tag.name).join(', ')}
-                    className="inline-flex items-center rounded border bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground"
+                    className="inline-flex items-center rounded-sm border bg-muted px-1.5 py-px text-[10px] leading-4 font-medium text-muted-foreground"
                 >
                     +{hidden.length}
                 </span>

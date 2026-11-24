@@ -67,8 +67,11 @@ class AdminActivityNotificationTest extends TestCase
         ])->assertRedirect();
 
         $this->assertSame(2, $admin->unreadNotifications()->count());
-        $submitNotification = $admin->unreadNotifications()->orderByDesc('id')->first();
-        $this->assertSame('Weekly report submitted: :terminal', $submitNotification->data['title_key']);
+        // Notification ids are random UUIDs and both rows can share a timestamp, so look the submission up by its title, not by order.
+        $this->assertEqualsCanonicalizing(
+            ['Weekly report updated: :terminal', 'Weekly report submitted: :terminal'],
+            $admin->unreadNotifications()->get()->map(fn ($notification) => $notification->data['title_key'])->all(),
+        );
     }
 
     public function test_admin_is_notified_when_supervisor_creates_or_updates_an_issue(): void

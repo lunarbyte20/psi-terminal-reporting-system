@@ -131,7 +131,8 @@ class GetMonthlyTerminalSummary
                 if (! isset($matrix[$typeId])) {
                     $matrix[$typeId] = [
                         'vehicle_type_id' => $typeId,
-                        'vehicle_type' => $line->vehicleType?->name ?? 'Unknown',
+                        // Vehicle types are never deleted (restrictOnDelete), only archived.
+                        'vehicle_type' => $line->vehicleType->name,
                         'passengers_per_trip' => null,
                         'weeks' => array_fill_keys($weekIds, ['trips' => 0, 'ridership' => 0]),
                         'total_trips' => 0,
@@ -148,8 +149,11 @@ class GetMonthlyTerminalSummary
                 $matrix[$typeId]['total_trips'] += $line->trips;
                 $matrix[$typeId]['total_ridership'] += $line->ridership;
 
-                $weekRidershipTotals[$week->id]['trips'] += $line->trips;
-                $weekRidershipTotals[$week->id]['ridership'] += $line->ridership;
+                $weekTotals = $weekRidershipTotals[$week->id];
+                $weekRidershipTotals[$week->id] = [
+                    'trips' => $weekTotals['trips'] + $line->trips,
+                    'ridership' => $weekTotals['ridership'] + $line->ridership,
+                ];
                 $monthTrips += $line->trips;
                 $monthRidership += $line->ridership;
             }

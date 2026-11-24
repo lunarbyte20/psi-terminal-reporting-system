@@ -111,8 +111,13 @@ class DashboardExportsAndPeriodsTest extends TestCase
             ->assertInertia(fn (Assert $page) => $page
                 ->component('dashboard/management-report')
                 ->where('period.kind', 'week')
-                ->where('evaluations.0.key_concerns', 'Power outage')
-                ->where('evaluations.0.sections.operational', 'All shifts covered.'));
+                // The evaluation arrives as table rows: Management Matter | Evaluation / Recommendation.
+                ->where('evaluations.0.rows.0', ['matter' => 'Key Issues and Concerns', 'text' => 'Power outage', 'items' => []])
+                ->where('evaluations.0.rows.1.text', 'Handled well.')
+                ->where('evaluations.0.rows.2.text', 'All shifts covered.')
+                ->where('evaluations.0.rows.3', ['matter' => 'Recommendations', 'text' => null, 'items' => ['Install backup UPS']])
+                ->where('statusSummary.total', 0)
+                ->where('signatories.submitted_to_name', 'Mr. Ferdinand P. Oroza'));
 
         $this->actingAs($supUser)->get(route('dashboard.management-report-pdf', $this->week))->assertForbidden();
 
@@ -142,8 +147,8 @@ class DashboardExportsAndPeriodsTest extends TestCase
                 ->where('period.kind', 'month')
                 ->where('period.title', 'October 2026')
                 ->where('dashboard.totals.sales.current', '3500.50')
-                ->where('evaluations.0.evaluation', 'Early')
-                ->where('evaluations.1.evaluation', 'Later'));
+                ->where('evaluations.0.rows.0.text', 'Early')
+                ->where('evaluations.1.rows.0.text', 'Later'));
 
         $csv = $this->actingAs($ceo)->get(route('dashboard.export', '2026-10'))->assertOk();
         $this->assertStringContainsString('psi-terminal-sales-2026-10.csv', (string) $csv->headers->get('content-disposition'));

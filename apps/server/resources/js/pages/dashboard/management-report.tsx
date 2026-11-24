@@ -2,7 +2,6 @@ import { t, useLocale } from '@/lib/i18n';
 import { Head, Link } from '@inertiajs/react';
 import { ArrowLeft, FileSpreadsheet, Printer } from 'lucide-react';
 import { useEffect } from 'react';
-import { IssueTags } from '@/components/issue-tags';
 import { issueStatusLabel } from '@/components/issue-status-badge';
 import { reportStatusLabel } from '@/components/report-status-badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +12,12 @@ import {
     formatPercent,
     formatPeso,
 } from '@/lib/format';
-import { ReportEvaluations, type ReportEvaluation } from './report-evaluations';
+import {
+    ReportEvaluations,
+    type IssueStatusSummary,
+    type ReportEvaluation,
+} from './report-evaluations';
+import { SalesHighlights } from './sales-highlights';
 import type { IssueSnapshotData } from './issue-snapshot';
 import {
     RidershipShareChart,
@@ -45,14 +49,21 @@ export default function ManagementReport({
     dashboard,
     issues,
     evaluations,
-    sectionOptions,
+    statusSummary,
+    signatories,
     generatedAt,
 }: {
     period: ReportPeriod;
     dashboard: ExecutiveDashboard;
     issues: IssueSnapshotData;
     evaluations: ReportEvaluation[];
-    sectionOptions: { key: string; label: string }[];
+    statusSummary: IssueStatusSummary;
+    signatories: {
+        prepared_by_name: string;
+        prepared_by_title: string;
+        submitted_to_name: string;
+        submitted_to_title: string;
+    };
     generatedAt: string;
 }) {
     useLocale();
@@ -97,7 +108,8 @@ export default function ManagementReport({
     return (
         <>
             <Head title={t('Management Report · :0', { '0': period.title })} />
-            <style>{`@media print { @page { size: 8.5in 13in portrait; margin: 0; } body { padding: 0.5in; } }`}</style>
+            {/* No page margin hides the browser URL/date header; each printed page pads itself (app.css). */}
+            <style>{`@media print { @page { size: 8.5in 13in portrait; margin: 0; } body { padding: 0; } }`}</style>
 
             <div className="min-h-screen bg-neutral-100 p-3 sm:p-6 print:min-h-0 print:bg-white print:p-0">
                 <div className="mx-auto mb-4 flex max-w-[8.5in] flex-wrap items-center justify-between gap-2 print:hidden">
@@ -370,6 +382,19 @@ export default function ManagementReport({
                         <div className="management-report-page-content space-y-3">
                             <DocSection
                                 number={4}
+                                title={t('Sales Highlights')}
+                                note={t('Change is against :0.', {
+                                    '0': previousLabel,
+                                })}
+                            >
+                                <SalesHighlights
+                                    dashboard={dashboard}
+                                    currentLabel={currentLabel}
+                                />
+                            </DocSection>
+
+                            <DocSection
+                                number={5}
                                 title={t('Ridership by Vehicle Type')}
                             >
                                 <DocFigure
@@ -411,14 +436,13 @@ export default function ManagementReport({
                     <div className="management-report-page">
                         <div className="management-report-page-content space-y-3">
                             <DocSection
-                                number={5}
+                                number={6}
                                 title={t('Open Operational Issues')}
                                 note={t('Most urgent first.')}
                             >
                                 <DocTable
                                     columns={[
                                         { label: t('Issue') },
-                                        { label: t('Issue tags') },
                                         { label: t('Terminal') },
                                         { label: t('Responsible') },
                                         { label: t('Status') },
@@ -427,10 +451,6 @@ export default function ManagementReport({
                                     empty={t('No open issues.')}
                                     rows={issues.items.map((item) => [
                                         `${item.key_issue}${item.requires_ceo_decision ? ' (CEO decision)' : ''}`,
-                                        <IssueTags
-                                            key={`tags-${item.id}`}
-                                            tags={item.tags}
-                                        />,
                                         item.terminal ?? t('General'),
                                         item.responsible_person ?? '—',
                                         `${issueStatusLabel(item.status)}${item.overdue ? ', overdue' : ''}`,
@@ -440,14 +460,14 @@ export default function ManagementReport({
                             </DocSection>
 
                             <DocSection
-                                number={6}
+                                number={7}
                                 title={t(
                                     'Management Evaluation & Recommendations',
                                 )}
                             >
                                 <ReportEvaluations
                                     evaluations={evaluations}
-                                    sectionOptions={sectionOptions}
+                                    statusSummary={statusSummary}
                                     showWeek={isMonth}
                                 />
                             </DocSection>
@@ -455,11 +475,15 @@ export default function ManagementReport({
                             <SignatureBlock
                                 signers={[
                                     {
-                                        role: 'Prepared by',
-                                        name:
-                                            evaluations[0]?.prepared_by ?? null,
+                                        role: 'Prepared by:',
+                                        name: signatories.prepared_by_name,
+                                        title: signatories.prepared_by_title,
                                     },
-                                    { role: 'Noted by', name: null },
+                                    {
+                                        role: 'Submitted to:',
+                                        name: signatories.submitted_to_name,
+                                        title: signatories.submitted_to_title,
+                                    },
                                 ]}
                             />
 
