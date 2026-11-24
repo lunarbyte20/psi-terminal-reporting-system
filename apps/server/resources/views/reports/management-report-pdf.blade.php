@@ -93,8 +93,10 @@
         .highlight-title { font-size: 8.5px; font-weight: 700; color: #1e3a8a; text-transform: uppercase; letter-spacing: 0.03em; margin: 0 0 3px; }
         .eval-layout { display: grid; grid-template-columns: 1fr 1.75in; gap: 12px; align-items: start; }
         .eval-table td.matter { width: 30%; font-weight: 700; color: #0f172a; }
-        .eval-table td { white-space: pre-line; }
+        .eval-table td { vertical-align: top; padding-top: 4px; padding-bottom: 4px; }
+        .eval-table td.eval-text { white-space: pre-line; }
         .eval-table ol { margin: 0; padding-left: 14px; }
+        .eval-table li { margin: 0 0 1px; }
         .eval-week td { background: #eef2ff !important; font-weight: 700; color: #1a1990; }
         .sigs { display: grid; grid-template-columns: 1fr 1fr; gap: 48px; margin-top: 28px; break-inside: avoid; }
         .sig-label { font-size: 8.5px; color: #64748b; margin-bottom: 26px; }
@@ -476,7 +478,7 @@
                         <tbody>
                             @foreach ($top as $i => $row)
                                 <tr>
-                                    <td><span class="swatch" style="background:{{ $palette[$i % count($palette)] }}"></span>{{ $row['terminal'] }}</td>
+                                    <td><span class="swatch" style="background:{{ $palette[$i % count($palette)] }}"></span>{{ $row['terminal'] }}<span style="color:#64748b;"> · {{ $row['supervisor'] ?? 'Unassigned' }}</span></td>
                                     <td class="num {{ str_contains($block['title'], 'Increase') ? 'up' : (str_contains($block['title'], 'Decrease') ? 'down' : '') }}">{{ ($block['value'])($row) }}</td>
                                 </tr>
                             @endforeach
@@ -523,13 +525,12 @@
                     @forelse ($ev['rows'] as $row)
                         <tr>
                             <td class="matter">{{ $row['matter'] }}</td>
-                            <td>
-                                @if (count($row['items']) > 0)
-                                    <ol>@foreach ($row['items'] as $rec)<li>{{ $rec }}</li>@endforeach</ol>
-                                @else
-                                    {{ $row['text'] }}
-                                @endif
-                            </td>
+                            {{-- Kept on one line: the cell uses pre-line, so template line breaks would print as blank lines. --}}
+                            @if (count($row['items']) > 0)
+                                <td><ol>@foreach ($row['items'] as $rec)<li>{{ $rec }}</li>@endforeach</ol></td>
+                            @else
+                                <td class="eval-text">{{ $row['text'] }}</td>
+                            @endif
                         </tr>
                     @empty
                         <tr><td colspan="2" style="color:#64748b;">The evaluation for this week is empty.</td></tr>
