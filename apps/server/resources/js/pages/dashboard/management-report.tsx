@@ -97,7 +97,7 @@ export default function ManagementReport({
     return (
         <>
             <Head title={t('Management Report · :0', { '0': period.title })} />
-            <style>{`@media print { @page { size: 8.5in 13in portrait; margin: 0.5in; } }`}</style>
+            <style>{`@media print { @page { size: 8.5in 13in portrait; margin: 0; } body { padding: 0.5in; } }`}</style>
 
             <div className="min-h-screen bg-neutral-100 p-3 sm:p-6 print:min-h-0 print:bg-white print:p-0">
                 <div className="mx-auto mb-4 flex max-w-[8.5in] flex-wrap items-center justify-between gap-2 print:hidden">

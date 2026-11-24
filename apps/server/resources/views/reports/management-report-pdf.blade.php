@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Executive Management Report — {{ $period['title'] }}</title>
     <style>
-        @page { size: 8.5in 13in portrait; margin: 0.4in 0.48in; }
+        @page { size: 8.5in 13in portrait; margin: 0; }
         * { box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
@@ -12,7 +12,8 @@
             line-height: 1.38;
             color: #1e293b;
             margin: 0 auto;
-            width: 7.54in;
+            padding: 0.4in 0.48in;
+            width: 8.5in;
         }
         .header {
             display: flex;
