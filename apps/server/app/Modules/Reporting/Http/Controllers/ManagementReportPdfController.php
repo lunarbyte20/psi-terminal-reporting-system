@@ -10,12 +10,14 @@ use App\Modules\Reporting\Actions\GetExecutiveDashboard;
 use App\Modules\Reporting\Actions\RenderHtmlToPdf;
 use App\Modules\Reporting\Actions\ResolveReportPeriod;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
- * Serves the management report as an inline PDF (8.5 × 13 in) so clicking
- * View PDF opens directly in the browser's native PDF viewer.
+ * Serves the management report as an inline PDF (8.5 × 13 in) when a headless
+ * browser is available, or falls back to the print-ready HTML view on shared
+ * hosting without Chromium/Edge.
  */
 class ManagementReportPdfController extends Controller
 {
@@ -26,7 +28,7 @@ class ManagementReportPdfController extends Controller
         GetExecutiveDashboard $dashboard,
         GetIssueSnapshot $issues,
         RenderHtmlToPdf $renderer,
-    ): BinaryFileResponse {
+    ): BinaryFileResponse|Response {
         Gate::authorize('view-all-terminals');
         $resolved = $resolve->execute($period);
         $labels = $resolved->weeks->mapWithKeys(fn ($week) => [$week->id => $week->label()]);
@@ -55,7 +57,7 @@ class ManagementReportPdfController extends Controller
             ? 'data:image/png;base64,'.base64_encode((string) file_get_contents($logoPath))
             : null;
 
-        $html = view('reports.management-report-pdf', [
+        $viewData = [
             'period' => $resolved->toArray(),
             'dashboard' => $dashboard->executeForPeriod($request->user(), $resolved),
             'issues' => $issues->execute($request->user()),
@@ -63,8 +65,16 @@ class ManagementReportPdfController extends Controller
             'sectionOptions' => EvaluationSection::options(),
             'generatedAt' => now()->setTimezone((string) config('app.display_timezone'))->format('M j, Y, H:i'),
             'logoDataUri' => $logoDataUri,
-        ])->render();
+        ];
 
+        if (! $renderer->hasBrowserBinary()) {
+            return response()->view('reports.management-report-pdf', [
+                ...$viewData,
+                'printFallback' => true,
+            ]);
+        }
+
+        $html = view('reports.management-report-pdf', $viewData)->render();
         $pdfPath = $renderer->execute($html);
 
         return response()

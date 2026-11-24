@@ -11,6 +11,11 @@ use Symfony\Component\Process\Process;
  */
 class RenderHtmlToPdf
 {
+    public function hasBrowserBinary(): bool
+    {
+        return $this->findBrowserBinary() !== null;
+    }
+
     public function execute(string $html): string
     {
         $binary = $this->findBrowserBinary();

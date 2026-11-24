@@ -4,6 +4,7 @@ namespace Tests\Feature\Reporting;
 
 use App\Modules\Accounts\Enums\Role;
 use App\Modules\Evaluations\Models\ManagementEvaluation;
+use App\Modules\Reporting\Actions\RenderHtmlToPdf;
 use App\Modules\Reporting\Enums\ReportStatus;
 use App\Modules\Reporting\Models\ReportingWeek;
 use App\Modules\Reporting\Models\WeeklyReport;
@@ -160,5 +161,20 @@ class DashboardExportsAndPeriodsTest extends TestCase
         $this->actingAs($ceo)->get('/dashboard/2026-12/management-report')->assertNotFound();
         $this->actingAs($ceo)->get('/dashboard/2026-13/terminal-sales.csv')->assertNotFound();
         $this->actingAs($ceo)->get('/dashboard/1999-01/terminal-sales.xlsx')->assertNotFound();
+    }
+
+    public function test_management_report_pdf_falls_back_to_print_html_when_no_browser_binary_exists(): void
+    {
+        $ceo = $this->userWithRole(Role::Ceo);
+
+        $this->mock(RenderHtmlToPdf::class, function ($mock): void {
+            $mock->shouldReceive('hasBrowserBinary')->once()->andReturn(false);
+        });
+
+        $this->actingAs($ceo)
+            ->get(route('dashboard.management-report-pdf', $this->week))
+            ->assertOk()
+            ->assertSee('Print / Save as PDF')
+            ->assertSee('Executive Management Report');
     }
 }

@@ -91,9 +91,41 @@
             font-size: 8px;
             color: #64748b;
         }
+        .print-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            background: #eef2ff;
+            border: 1px solid #c7d2fe;
+            border-radius: 4px;
+            padding: 8px 12px;
+            margin: 10px 0 14px;
+        }
+        .print-toolbar-note { font-size: 10px; color: #1e3a8a; }
+        .print-toolbar-btn {
+            background: #1a1990;
+            color: #ffffff;
+            border: 0;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        @media print {
+            .print-toolbar { display: none; }
+        }
     </style>
 </head>
 <body>
+@if (! empty($printFallback))
+    <div class="print-toolbar">
+        <span class="print-toolbar-note">Choose <strong>Save as PDF</strong> (8.5 × 13 in, portrait) in the print dialog to download this report.</span>
+        <button type="button" class="print-toolbar-btn" onclick="window.print()">Print / Save as PDF</button>
+    </div>
+@endif
 @php
     $palette = ['#1a1990', '#0f9b8e', '#d4a017', '#7c6fd6', '#e07a5f', '#2e9e5b', '#3b82f6', '#64748b'];
     $sales = $dashboard['totals']['sales'];
@@ -469,6 +501,11 @@
         if (h > maxTotalPx) {
             document.body.style.zoom = String(Math.max(0.65, maxTotalPx / h));
         }
+        @if (! empty($printFallback))
+        window.addEventListener('load', function () {
+            window.print();
+        });
+        @endif
     })();
 </script>
 </body>
