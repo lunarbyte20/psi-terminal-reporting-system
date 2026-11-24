@@ -3,21 +3,16 @@ import { Form, Head } from '@inertiajs/react';
 import { useRef } from 'react';
 import SecurityController from '@/actions/App/Http/Controllers/Settings/SecurityController';
 import InputError from '@/components/input-error';
-import type { Props as ManagePasskeysProps } from '@/components/manage-passkeys';
-import ManagePasskeys from '@/components/manage-passkeys';
-import type { Props as ManageTwoFactorProps } from '@/components/manage-two-factor';
-import ManageTwoFactor from '@/components/manage-two-factor';
 import { Panel } from '@/components/page-header';
 import PasswordInput from '@/components/password-input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { edit } from '@/routes/security';
 
-// oxfmt-ignore
 type Props = {
     passwordRules: string;
-} & ManagePasskeysProps &
-    ManageTwoFactorProps;
+    mustChangePassword?: boolean;
+};
 
 export default function Security(props: Props) {
     useLocale();
@@ -28,6 +23,31 @@ export default function Security(props: Props) {
         <>
             <Head title={t('Security settings')} />
             <h1 className="sr-only">{t('Security settings')}</h1>
+
+            {props.mustChangePassword && (
+                <div className="mb-4 rounded-lg border border-primary/30 bg-primary/5 p-4 text-sm">
+                    <p className="font-semibold text-foreground">
+                        {t('First-time password setup guide')}
+                    </p>
+                    <ol className="mt-2 list-decimal space-y-1 pl-5 text-muted-foreground">
+                        <li>
+                            {t(
+                                'Enter the temporary password given by your Admin in Current password.',
+                            )}
+                        </li>
+                        <li>
+                            {t(
+                                'Type your new personal password (at least 8 characters) and enter it again in Confirm password.',
+                            )}
+                        </li>
+                        <li>
+                            {t(
+                                'Click Save to finish setup and go straight to your dashboard.',
+                            )}
+                        </li>
+                    </ol>
+                </div>
+            )}
 
             <Panel
                 title={t('Update password')}
@@ -90,6 +110,11 @@ export default function Security(props: Props) {
                                         placeholder={t('New password')}
                                         passwordrules={props.passwordRules}
                                     />
+                                    <p className="text-xs text-muted-foreground">
+                                        {t(
+                                            'Use at least 8 characters. Avoid reusing your temporary password.',
+                                        )}
+                                    </p>
                                     <InputError message={errors.password} />
                                 </div>
 
@@ -123,19 +148,6 @@ export default function Security(props: Props) {
                     )}
                 </Form>
             </Panel>
-
-            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
-                <ManageTwoFactor
-                    canManageTwoFactor={props.canManageTwoFactor}
-                    requiresConfirmation={props.requiresConfirmation}
-                    twoFactorEnabled={props.twoFactorEnabled}
-                />
-
-                <ManagePasskeys
-                    canManagePasskeys={props.canManagePasskeys}
-                    passkeys={props.passkeys}
-                />
-            </div>
         </>
     );
 }

@@ -38,6 +38,7 @@ class SecurityController extends Controller
                     ->all()
                 : [],
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            'mustChangePassword' => (bool) $request->user()->must_change_password,
         ];
 
         if (Features::canManageTwoFactorAuthentication()) {
@@ -55,6 +56,8 @@ class SecurityController extends Controller
      */
     public function update(PasswordUpdateRequest $request): RedirectResponse
     {
+        $wasFirstLogin = (bool) $request->user()->must_change_password;
+
         $request->user()->forceFill([
             'password' => $request->password,
             'must_change_password' => false,
@@ -62,6 +65,6 @@ class SecurityController extends Controller
 
         Inertia::flash('toast', ['type' => 'success', 'message' => __('Password updated.')]);
 
-        return back();
+        return $wasFirstLogin ? redirect()->route('dashboard') : back();
     }
 }

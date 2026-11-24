@@ -163,7 +163,7 @@ export function DonutChart({
             <div className="flex flex-col items-center gap-4 @md:flex-row @md:items-start">
                 <svg
                     viewBox="0 0 380 210"
-                    className="h-auto w-full max-w-[360px] shrink-0 print:max-w-[260px]"
+                    className="h-auto w-full max-w-[320px] shrink-0 print:max-w-[260px]"
                     role="img"
                     aria-label={t(ariaLabel)}
                 >
@@ -229,7 +229,7 @@ export function DonutChart({
                         </g>
                     ))}
                 </svg>
-                <ul className="w-full space-y-1.5 text-xs print:space-y-0.5 print:text-[10px]">
+                <ul className="w-full min-w-0 space-y-1.5 text-xs @md:w-auto @md:flex-1 print:space-y-0.5 print:text-[10px]">
                     {slices.map((slice, index) => (
                         <li key={slice.key} className="flex items-center gap-2">
                             <span
@@ -245,10 +245,10 @@ export function DonutChart({
                             <span className="min-w-0 flex-1 truncate">
                                 {t(slice.label)}
                             </span>
-                            <span className="text-muted-foreground tabular-nums">
+                            <span className="shrink-0 text-muted-foreground tabular-nums">
                                 {((slice.value / total) * 100).toFixed(1)}%
                             </span>
-                            <span className="w-24 text-right font-medium tabular-nums">
+                            <span className="shrink-0 text-right font-medium tabular-nums">
                                 {slice.display}
                             </span>
                         </li>

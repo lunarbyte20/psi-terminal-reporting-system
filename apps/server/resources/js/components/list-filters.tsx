@@ -59,28 +59,42 @@ export function ListFilters({
         <Form
             action={action}
             method="get"
-            className="flex flex-wrap items-end gap-3 rounded-lg border bg-card p-3.5 sm:p-4"
+            className="flex flex-wrap items-end gap-2 rounded-lg border bg-card p-2.5 sm:gap-3 sm:p-4"
         >
-            <div className="flex w-full items-end gap-2 md:w-auto md:min-w-48 md:flex-1">
+            <div className="flex w-full items-end gap-1.5 sm:gap-2 md:w-auto md:min-w-48 md:flex-1">
                 <div className="min-w-0 flex-1 space-y-1.5">
-                    <Label htmlFor="list-search">{searchLabel}</Label>
+                    <Label htmlFor="list-search" className="sr-only md:not-sr-only">
+                        {searchLabel}
+                    </Label>
                     <Input
                         id="list-search"
                         name="q"
                         defaultValue={search}
+                        placeholder={searchLabel}
                         maxLength={100}
+                        className="h-8 text-xs sm:h-9 sm:text-sm"
                     />
                 </div>
+                {!mobileOpen && (
+                    <Button
+                        type="submit"
+                        variant="view"
+                        size="sm"
+                        className="h-8 shrink-0 px-2.5 text-xs md:hidden"
+                    >
+                        {t('Search')}
+                    </Button>
+                )}
                 {selects.length > 0 && (
                     <Button
                         type="button"
                         variant={mobileOpen ? 'secondary' : 'outline'}
                         size="sm"
-                        className="h-9 shrink-0 md:hidden"
+                        className="h-8 shrink-0 px-2.5 text-xs sm:h-9 md:hidden"
                         aria-expanded={mobileOpen}
                         onClick={() => setMobileOpen((prev) => !prev)}
                     >
-                        <SlidersHorizontal className="size-4" />
+                        <SlidersHorizontal className="size-3.5" />
                         <span>{t('Filters')}</span>
                         {activeSelectCount > 0 && (
                             <span className="ml-0.5 inline-flex size-4 items-center justify-center rounded-full bg-primary text-[10px] font-bold text-primary-foreground">
@@ -92,16 +106,19 @@ export function ListFilters({
             </div>
             <div
                 className={cn(
-                    'w-full grid-cols-2 gap-2.5 md:contents',
+                    'w-full grid-cols-2 gap-2 md:contents',
                     mobileOpen ? 'grid' : 'hidden md:contents',
                 )}
             >
                 {selects.map((select) => (
                     <div
                         key={select.name}
-                        className="w-full space-y-1.5 md:w-52"
+                        className="w-full space-y-1 md:w-52 md:space-y-1.5"
                     >
-                        <Label htmlFor={`filter-${select.name}`}>
+                        <Label
+                            htmlFor={`filter-${select.name}`}
+                            className="text-xs sm:text-sm"
+                        >
                             {t(select.label)}
                         </Label>
                         {select.searchable ? (
@@ -158,19 +175,26 @@ export function ListFilters({
             {Object.entries(hidden).map(([name, value]) => (
                 <input key={name} type="hidden" name={name} value={value} />
             ))}
-            <div className="flex w-full gap-2 md:w-auto">
+            <div
+                className={cn(
+                    'w-full gap-2 md:flex md:w-auto',
+                    mobileOpen || filtered ? 'flex' : 'hidden md:flex',
+                )}
+            >
                 <Button
                     type="submit"
                     variant="view"
-                    className="flex-1 md:flex-none"
+                    size="sm"
+                    className="h-8 flex-1 text-xs sm:h-9 sm:text-sm md:flex-none"
                 >
                     {t('Apply filters')}
                 </Button>
                 {filtered && (
                     <Button
                         variant="outline"
+                        size="sm"
                         asChild
-                        className="flex-1 md:flex-none"
+                        className="h-8 flex-1 text-xs sm:h-9 sm:text-sm md:flex-none"
                     >
                         <Link
                             href={

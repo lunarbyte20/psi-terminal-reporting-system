@@ -503,6 +503,9 @@
             document.body.style.zoom = String(Math.max(0.65, maxTotalPx / h));
         }
         @if (! empty($printFallback))
+        window.addEventListener('afterprint', function () {
+            window.close();
+        });
         window.addEventListener('load', function () {
             window.print();
         });

@@ -1571,5 +1571,11 @@
     "Reactivate :0": "I-activate muli si :0",
     "Delete :0?": "Tanggalin ang account ni :0?",
     "This deactivates the account, signs them out immediately, and preserves all past reports, issues, and audit history. You can reactivate it later if needed.": "Idi-deactivate nito ang account, agad silang isa-sign out, at pananatilihin ang lahat ng nakaraang ulat, isyu, at audit history. Maaari mo itong i-activate muli kung kinakailangan.",
-    "Delete account": "Tanggalin ang account"
+    "Delete account": "Tanggalin ang account",
+    "First-time password setup guide": "Gabay sa unang pag-setup ng password",
+    "Enter the temporary password given by your Admin in Current password.": "Ilagay ang pansamantalang password na ibinigay ng Admin sa Kasalukuyang password.",
+    "Type your new personal password (at least 8 characters) and enter it again in Confirm password.": "I-type ang iyong bagong personal na password (hindi bababa sa 8 karakter) at ilagay itong muli sa Kumpirmahin ang password.",
+    "Click Save to finish setup and go straight to your dashboard.": "I-click ang I-save upang matapos ang setup at dumiretso sa iyong dashboard.",
+    "Use at least 8 characters. Avoid reusing your temporary password.": "Gumamit ng hindi bababa sa 8 karakter. Iwasang gamitin muli ang iyong pansamantalang password.",
+    "Search": "Hanapin"
 }

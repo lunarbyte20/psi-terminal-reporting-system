@@ -14,16 +14,17 @@ import { savePreferences } from '@/lib/preferences';
 
 export function PreferencesControls() {
     const { auth, locale: savedLocale } = usePage().props;
+    const isSupervisor = auth.role === 'Supervisor';
     const locale = useLocale();
     const { appearance, resolvedAppearance, updateAppearance } =
         useAppearance();
     const [saving, setSaving] = useState(false);
     useEffect(() => {
-        setLocale(savedLocale === 'fil' ? 'fil' : 'en');
+        setLocale(isSupervisor && savedLocale === 'fil' ? 'fil' : 'en');
         if (auth.user?.theme)
             updateAppearance(auth.user.theme as 'light' | 'dark' | 'system');
         // Apply the persisted preference on a page visit, never remount the form.
-    }, [auth.user?.id, auth.user?.theme, savedLocale, updateAppearance]);
+    }, [auth.user?.id, auth.user?.theme, isSupervisor, savedLocale, updateAppearance]);
 
     async function changeLanguage() {
         const next = locale === 'en' ? 'fil' : 'en';
@@ -61,23 +62,25 @@ export function PreferencesControls() {
 
     return (
         <div className="flex shrink-0 items-center gap-1">
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="size-10"
-                        disabled={saving}
-                        onClick={() => void changeLanguage()}
-                        aria-label={languageLabel}
-                        aria-pressed={locale === 'fil'}
-                    >
-                        <Languages className="size-5" aria-hidden="true" />
-                    </Button>
-                </TooltipTrigger>
-                <TooltipContent>{languageLabel}</TooltipContent>
-            </Tooltip>
+            {isSupervisor && (
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="size-10"
+                            disabled={saving}
+                            onClick={() => void changeLanguage()}
+                            aria-label={languageLabel}
+                            aria-pressed={locale === 'fil'}
+                        >
+                            <Languages className="size-5" aria-hidden="true" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>{languageLabel}</TooltipContent>
+                </Tooltip>
+            )}
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button
